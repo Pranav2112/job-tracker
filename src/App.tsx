@@ -19,6 +19,7 @@ import { ApplicationDetailPage } from '@/pages/ApplicationDetailPage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { ContactsPage } from '@/pages/ContactsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
 import { Loader2 } from 'lucide-react'
 
 const queryClient = new QueryClient({
@@ -90,6 +91,7 @@ function AppRoutes() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </>

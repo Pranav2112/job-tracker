@@ -24,6 +24,7 @@ export function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw]     = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading]   = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -32,6 +33,8 @@ export function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    // Set storage preference before sign-in so the storage adapter picks it up
+    localStorage.setItem('app_remember_me', rememberMe ? 'true' : 'false')
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     if (error) { setError(parseAuthError(error.message)); setLoading(false); return }
     navigate('/dashboard')
@@ -131,6 +134,34 @@ export function LoginPage() {
               </button>
             </div>
           </div>
+
+          {/* Remember me */}
+          <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+            <div
+              className={`relative h-4 w-4 rounded flex items-center justify-center border transition-all ${
+                rememberMe
+                  ? 'bg-primary border-primary'
+                  : 'border-input bg-background group-hover:border-primary/60'
+              }`}
+              onClick={() => setRememberMe(v => !v)}
+            >
+              {rememberMe && (
+                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 9" fill="none">
+                  <path d="M1 4L4.5 7.5L11 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+              />
+            </div>
+            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+              Remember me
+            </span>
+            <span className="ml-auto text-xs text-muted-foreground/60">Stay signed in</span>
+          </label>
 
           <Button type="submit" className="w-full h-11 gradient-primary border-0 text-white font-semibold" disabled={loading || googleLoading}>
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

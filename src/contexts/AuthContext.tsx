@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 
 interface AuthContextValue {
@@ -17,6 +18,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Tracks whether the sign-out was triggered by the user (vs. session expiry)
+  const manualSignOut = useRef(false)
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -24,7 +28,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Unexpected SIGNED_OUT = refresh token expired or session revoked
+      if (event === 'SIGNED_OUT' && !manualSignOut.current) {
+        toast.error('Your session has expired. Please sign in again.', {
+          id: 'session-expired',
+          duration: 6000,
+        })
+      }
+      if (event === 'SIGNED_OUT') manualSignOut.current = false
+
       setSession(session)
       setUser(session?.user ?? null)
     })
@@ -33,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
+    manualSignOut.current = true
     await supabase.auth.signOut()
   }
 

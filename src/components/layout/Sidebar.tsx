@@ -11,6 +11,7 @@ import { useApplications } from '@/hooks/useApplications'
 import { animateSidebarIn } from '@/lib/animations'
 import { useGamification } from '@/hooks/useGamification'
 import { AchievementsModal } from '@/components/gamification/AchievementsModal'
+import { useProfile } from '@/hooks/useProfile'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', shortcut: 'K' },
@@ -26,6 +27,7 @@ export function Sidebar() {
   const sidebarRef = useRef<HTMLDivElement>(null)
   const { data: applications = [] } = useApplications()
   const { level, streak, achievements, unlockedCount } = useGamification()
+  const { data: profile } = useProfile()
 
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -56,8 +58,9 @@ export function Sidebar() {
     navigate('/login')
   }
 
-  const email = user?.email ?? ''
-  const initials = email ? email.slice(0, 2).toUpperCase() : '?'
+  const email    = user?.email ?? ''
+  const initials = (profile?.full_name ?? email).slice(0, 2).toUpperCase() || '?'
+  const avatarUrl = profile?.avatar_url
 
   return (
     <>
@@ -225,9 +228,17 @@ export function Sidebar() {
               className="flex items-center gap-2 flex-1 min-w-0 rounded-lg hover:bg-muted/60 transition-colors -mx-1 px-1 py-1 group"
               title="Settings & profile"
             >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full gradient-primary text-white text-[10px] font-bold ring-1 ring-white/10 group-hover:ring-primary/30 transition-all">
-                {initials}
-              </div>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/10 group-hover:ring-primary/30 transition-all"
+                />
+              ) : (
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full gradient-primary text-white text-[10px] font-bold ring-1 ring-white/10 group-hover:ring-primary/30 transition-all">
+                  {initials}
+                </div>
+              )}
               <p className="flex-1 text-xs text-muted-foreground truncate group-hover:text-foreground transition-colors">{email}</p>
             </button>
             <button
