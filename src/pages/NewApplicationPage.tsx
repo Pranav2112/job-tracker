@@ -3,16 +3,19 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ApplicationForm } from '@/components/forms/ApplicationForm'
 import { useCreateApplication } from '@/hooks/useApplications'
+import { useUpdateStreak } from '@/hooks/useGamification'
 import { toast } from 'sonner'
 import type { Application } from '@/types'
 
 export function NewApplicationPage() {
   const navigate = useNavigate()
   const create = useCreateApplication()
+  const touchStreak = useUpdateStreak()
 
   async function handleSubmit(values: Omit<Application, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
     const app = await create.mutateAsync(values)
     toast.success(`${values.company_name} added!`)
+    void touchStreak()
     navigate(`/applications/${app.id}`)
   }
 
