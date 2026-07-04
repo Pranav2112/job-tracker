@@ -29,7 +29,6 @@ import { useApplicationContacts } from '@/hooks/useContacts'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { computeCompleteness, scoreColor } from '@/lib/completeness'
 import { animateIn } from '@/lib/animations'
-import { cn } from '@/lib/utils'
 import { PIPELINE_STAGES, STAGE_LABELS, APP_TYPE_LABELS, REMOTE_TYPE_LABELS } from '@/lib/constants'
 import type { Application, Document, PipelineStage } from '@/types'
 
@@ -283,7 +282,6 @@ function InterviewRoundCard({ round: r, applicationId }: { round: import('@/type
 function InterviewsTab({ applicationId }: { applicationId: string }) {
   const { data: rounds = [] } = useInterviewRounds(applicationId)
   const create = useCreateInterviewRound()
-  const del = useDeleteInterviewRound()
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ round_type: 'PhoneScreen', scheduled_at: '', format: 'Video', prep_notes: '', post_notes: '', outcome: 'Pending' })
 
@@ -292,8 +290,6 @@ function InterviewsTab({ applicationId }: { applicationId: string }) {
     setAdding(false)
     setForm({ round_type: 'PhoneScreen', scheduled_at: '', format: 'Video', prep_notes: '', post_notes: '', outcome: 'Pending' })
   }
-
-  const outcomeColor = (o: string) => o === 'Passed' ? 'text-green-600' : o === 'Failed' ? 'text-red-600' : o === 'Cancelled' ? 'text-gray-400' : 'text-amber-600'
 
   return (
     <div className="space-y-4">

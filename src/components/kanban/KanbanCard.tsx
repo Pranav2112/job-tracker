@@ -21,7 +21,7 @@ function CompletenessRing({ score }: { score: number }) {
   const filled = (score / 100) * circ
   const color = scoreColor(score)
   return (
-    <svg width="22" height="22" viewBox="0 0 22 22" className="shrink-0" title={`${score}% complete`}>
+    <svg width="22" height="22" viewBox="0 0 22 22" className="shrink-0" aria-label={`${score}% complete`}>
       <circle cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-border" />
       <circle
         cx="11" cy="11" r={r} fill="none" stroke={color} strokeWidth="2.5"

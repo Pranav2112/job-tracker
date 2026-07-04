@@ -20,14 +20,13 @@ interface KanbanBoardProps {
 
 function fireConfetti(stage: PipelineStage) {
   if (stage === 'Accepted') {
-    // Full celebration — multiple bursts
     const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#fbbf24', '#34d399', '#f472b6']
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors })
     setTimeout(() => confetti({ particleCount: 60, angle: 60,  spread: 55, origin: { x: 0, y: 0.65 }, colors }), 250)
     setTimeout(() => confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors }), 400)
-  } else if (stage === 'Offer') {
+  } else if (stage === 'OfferReceived') {
     confetti({ particleCount: 70, spread: 65, origin: { y: 0.65 }, colors: ['#6366f1', '#8b5cf6', '#fbbf24'] })
-  } else if (stage === 'RecruiterScreen' || stage === 'PhoneScreen') {
+  } else if (stage === 'RecruiterScreen' || stage === 'Interviewing') {
     confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 }, scalar: 0.8, colors: ['#6366f1', '#a78bfa'] })
   }
 }

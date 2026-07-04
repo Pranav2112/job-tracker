@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { startOfWeek, endOfWeek, parseISO, isToday, isYesterday, differenceInCalendarDays } from 'date-fns'
+import { startOfWeek, endOfWeek, parseISO, differenceInCalendarDays } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApplications } from '@/hooks/useApplications'
