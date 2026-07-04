@@ -294,3 +294,43 @@ export function useActivityLog(applicationId: string) {
     enabled: !!user && !!applicationId,
   })
 }
+
+// ─── Update Research Note ─────────────────────────────────────────────────────
+export function useUpdateResearchNote() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async ({ id, applicationId, content }: { id: string; applicationId: string; content: string }) => {
+      const { data, error } = await supabase
+        .from('research_notes')
+        .update({ content })
+        .eq('id', id)
+        .eq('user_id', user!.id)
+        .select().single()
+      if (error) throw error
+      return data as ResearchNote
+    },
+    onSuccess: (d) => qc.invalidateQueries({ queryKey: ['research-notes', d.application_id] }),
+  })
+}
+
+// ─── All upcoming interviews (for Kanban countdown) ───────────────────────────
+export function useUpcomingInterviews() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['upcoming-interviews'],
+    queryFn: async () => {
+      const now = new Date().toISOString()
+      const { data, error } = await supabase
+        .from('interview_rounds')
+        .select('id, application_id, scheduled_at, round_type, outcome')
+        .eq('user_id', user!.id)
+        .gte('scheduled_at', now)
+        .order('scheduled_at', { ascending: true })
+      if (error) throw error
+      return data as Pick<InterviewRound, 'id' | 'application_id' | 'scheduled_at' | 'round_type' | 'outcome'>[]
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  })
+}

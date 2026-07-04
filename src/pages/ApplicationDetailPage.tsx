@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Loader2, ExternalLink, Trash2, Plus, FileText, User, Clock,
-  Calendar as CalendarIcon, Edit, Check, X,
+  Calendar as CalendarIcon, Edit, Check, X, Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -19,23 +19,29 @@ import {
   useApplication, useUpdateApplication, useDeleteApplication,
 } from '@/hooks/useApplications'
 import {
-  useInterviewRounds, useCreateInterviewRound, useDeleteInterviewRound,
-  useResearchNotes, useCreateResearchNote, useDeleteResearchNote,
+  useInterviewRounds, useCreateInterviewRound, useUpdateInterviewRound, useDeleteInterviewRound,
+  useResearchNotes, useCreateResearchNote, useUpdateResearchNote, useDeleteResearchNote,
   useDocuments, useUploadDocument, useAddDocumentLink, useDeleteDocument,
   useOffer, useUpsertOffer, useAddNegotiationEntry,
   useActivityLog,
 } from '@/hooks/useDetailData'
 import { useApplicationContacts } from '@/hooks/useContacts'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { computeCompleteness, scoreColor } from '@/lib/completeness'
+import { animateIn } from '@/lib/animations'
+import { cn } from '@/lib/utils'
 import { PIPELINE_STAGES, STAGE_LABELS, APP_TYPE_LABELS, REMOTE_TYPE_LABELS } from '@/lib/constants'
 import type { Application, Document, PipelineStage } from '@/types'
 
 // ─── Quick edit inline field ──────────────────────────────────────────────────
-function InlineEdit({ label, value, onSave, type = 'text' }: { label: string; value: string; onSave: (v: string) => void; type?: string }) {
+function InlineEdit({ label, value, displayValue, onSave, type = 'text' }: {
+  label: string; value: string; displayValue?: string; onSave: (v: string) => void; type?: string
+}) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   function save() { onSave(draft); setEditing(false) }
   function cancel() { setDraft(value); setEditing(false) }
+  const shown = displayValue ?? value
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
@@ -47,7 +53,56 @@ function InlineEdit({ label, value, onSave, type = 'text' }: { label: string; va
         </div>
       ) : (
         <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-sm hover:text-primary group w-full text-left">
-          <span className={value ? '' : 'text-muted-foreground italic'}>{value || 'Click to add…'}</span>
+          <span className={shown ? '' : 'text-muted-foreground italic'}>{shown || 'Click to add…'}</span>
+          <Edit className="h-3 w-3 opacity-0 group-hover:opacity-50 shrink-0" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── URL field with clickable link display ─────────────────────────────────────
+function UrlField({ label, value, onSave }: { label: string; value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  function save() { onSave(draft); setEditing(false) }
+  function cancel() { setDraft(value); setEditing(false) }
+
+  let hostname = ''
+  try { if (value) hostname = new URL(value).hostname.replace(/^www\./, '') } catch { hostname = value }
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      {editing ? (
+        <div className="flex gap-1">
+          <Input type="url" value={draft} onChange={e => setDraft(e.target.value)} className="h-8 text-sm" placeholder="https://…" autoFocus />
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={save}><Check className="h-3.5 w-3.5" /></Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancel}><X className="h-3.5 w-3.5" /></Button>
+        </div>
+      ) : value ? (
+        <div className="flex items-center gap-1.5 group">
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline flex items-center gap-1 min-w-0"
+            onClick={e => e.stopPropagation()}
+          >
+            <ExternalLink className="h-3 w-3 shrink-0" />
+            <span className="truncate">{hostname}</span>
+          </a>
+          <button
+            onClick={() => setEditing(true)}
+            className="opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity shrink-0"
+            title="Edit URL"
+          >
+            <Edit className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-sm text-muted-foreground italic hover:text-primary group w-full text-left">
+          Click to add…
           <Edit className="h-3 w-3 opacity-0 group-hover:opacity-50 shrink-0" />
         </button>
       )}
@@ -163,6 +218,67 @@ function DocumentsTab({ applicationId }: { applicationId: string }) {
   )
 }
 
+// ─── Single Interview Round Card (supports inline edit) ───────────────────────
+function InterviewRoundCard({ round: r, applicationId }: { round: import('@/types').InterviewRound; applicationId: string }) {
+  const update = useUpdateInterviewRound()
+  const del = useDeleteInterviewRound()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState({ prep_notes: r.prep_notes ?? '', post_notes: r.post_notes ?? '', outcome: r.outcome, scheduled_at: r.scheduled_at ?? '' })
+
+  const outcomeColor = (o: string) => o === 'Passed' ? 'text-green-600' : o === 'Failed' ? 'text-red-600' : o === 'Cancelled' ? 'text-muted-foreground' : 'text-amber-600'
+
+  async function handleSave() {
+    await update.mutateAsync({ id: r.id, applicationId, ...draft })
+    setEditing(false)
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-4 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-semibold text-sm">{r.round_type} · {r.format}</p>
+            {r.scheduled_at && <p className="text-xs text-muted-foreground">{formatDate(r.scheduled_at, 'MMM d, yyyy HH:mm')}</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-semibold ${outcomeColor(r.outcome)}`}>{r.outcome}</span>
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => { setDraft({ prep_notes: r.prep_notes ?? '', post_notes: r.post_notes ?? '', outcome: r.outcome, scheduled_at: r.scheduled_at ?? '' }); setEditing(e => !e) }}>
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => del.mutate({ id: r.id, applicationId })}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+        {editing ? (
+          <div className="space-y-2 pt-1 border-t">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1"><Label className="text-xs">Scheduled</Label><Input type="datetime-local" className="h-8 text-xs" value={draft.scheduled_at} onChange={e => setDraft(d => ({ ...d, scheduled_at: e.target.value }))} /></div>
+              <div className="space-y-1">
+                <Label className="text-xs">Outcome</Label>
+                <Select value={draft.outcome} onValueChange={v => setDraft(d => ({ ...d, outcome: v as typeof r.outcome }))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['Pending','Passed','Failed','Cancelled'].map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1"><Label className="text-xs">Prep notes</Label><Textarea rows={2} value={draft.prep_notes} onChange={e => setDraft(d => ({ ...d, prep_notes: e.target.value }))} /></div>
+            <div className="space-y-1"><Label className="text-xs">Post-interview notes</Label><Textarea rows={2} value={draft.post_notes} onChange={e => setDraft(d => ({ ...d, post_notes: e.target.value }))} /></div>
+            <div className="flex gap-2"><Button size="sm" onClick={handleSave} disabled={update.isPending}>Save</Button><Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button></div>
+          </div>
+        ) : (
+          <>
+            {r.prep_notes && <div><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Prep</p><p className="text-sm whitespace-pre-wrap">{r.prep_notes}</p></div>}
+            {r.post_notes && <div><p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Post-interview</p><p className="text-sm whitespace-pre-wrap">{r.post_notes}</p></div>}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // ─── Interviews Tab ───────────────────────────────────────────────────────────
 function InterviewsTab({ applicationId }: { applicationId: string }) {
   const { data: rounds = [] } = useInterviewRounds(applicationId)
@@ -251,24 +367,7 @@ function InterviewsTab({ applicationId }: { applicationId: string }) {
       ) : (
         <div className="space-y-3">
           {rounds.map(r => (
-            <Card key={r.id}>
-              <CardContent className="pt-4 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-sm">{r.round_type} · {r.format}</p>
-                    {r.scheduled_at && <p className="text-xs text-muted-foreground">{formatDate(r.scheduled_at, 'MMM d, yyyy HH:mm')}</p>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium ${outcomeColor(r.outcome)}`}>{r.outcome}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => del.mutate({ id: r.id, applicationId })}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                {r.prep_notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Prep</p><p className="text-sm whitespace-pre-wrap">{r.prep_notes}</p></div>}
-                {r.post_notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Post-interview</p><p className="text-sm whitespace-pre-wrap">{r.post_notes}</p></div>}
-              </CardContent>
-            </Card>
+            <InterviewRoundCard key={r.id} round={r} applicationId={applicationId} />
           ))}
         </div>
       )}
@@ -280,13 +379,22 @@ function InterviewsTab({ applicationId }: { applicationId: string }) {
 function ResearchTab({ applicationId }: { applicationId: string }) {
   const { data: notes = [] } = useResearchNotes(applicationId)
   const create = useCreateResearchNote()
+  const update = useUpdateResearchNote()
   const del = useDeleteResearchNote()
   const [content, setContent] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
 
   async function handleAdd() {
     if (!content.trim()) return
     await create.mutateAsync({ applicationId, content: content.trim() })
     setContent('')
+  }
+
+  async function handleSaveEdit(id: string) {
+    if (!editDraft.trim()) return
+    await update.mutateAsync({ id, applicationId, content: editDraft.trim() })
+    setEditingId(null)
   }
 
   return (
@@ -299,18 +407,35 @@ function ResearchTab({ applicationId }: { applicationId: string }) {
       </div>
 
       {notes.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">No research notes yet. Add info about company culture, recent news, etc.</p>
+        <p className="text-sm text-muted-foreground text-center py-6">No research notes yet.</p>
       ) : (
         <div className="space-y-3">
           {notes.map(n => (
             <Card key={n.id}>
               <CardContent className="pt-4">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm whitespace-pre-wrap flex-1">{n.content}</p>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => del.mutate({ id: n.id, applicationId })}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                {editingId === n.id ? (
+                  <div className="space-y-2">
+                    <Textarea rows={3} value={editDraft} onChange={e => setEditDraft(e.target.value)} autoFocus />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleSaveEdit(n.id)} disabled={update.isPending}>Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm whitespace-pre-wrap flex-1">{n.content}</p>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={() => { setEditingId(n.id); setEditDraft(n.content) }}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => del.mutate({ id: n.id, applicationId })}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground mt-2">{formatDate(n.created_at, 'MMM d, yyyy HH:mm')}</p>
               </CardContent>
             </Card>
@@ -488,6 +613,21 @@ export function ApplicationDetailPage() {
   const { data: app, isLoading } = useApplication(id!)
   const update = useUpdateApplication()
   const del = useDeleteApplication()
+  const { data: docs = [] } = useDocuments(id ?? '')
+  const { data: rounds = [] } = useInterviewRounds(id ?? '')
+  const { data: contacts = [] } = useApplicationContacts(id ?? '')
+  const { data: notes = [] } = useResearchNotes(id ?? '')
+  const pageRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { animateIn(pageRef.current) }, [id])
+
+  const { score, nextAction } = computeCompleteness(app ?? {} as Application, {
+    docs: docs.length,
+    interviews: rounds.length,
+    contacts: contacts.length,
+    notes: notes.length,
+  })
+  const color = scoreColor(score)
 
   async function save(field: keyof Application, value: string) {
     if (!app) return
@@ -504,7 +644,7 @@ export function ApplicationDetailPage() {
   if (!app) return <div className="p-6 text-muted-foreground">Application not found.</div>
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div ref={pageRef} className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Back + actions */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
@@ -549,6 +689,23 @@ export function ApplicationDetailPage() {
           {app.remote_type && <span className="text-xs text-muted-foreground">{REMOTE_TYPE_LABELS[app.remote_type]}</span>}
           {app.location && <span className="text-xs text-muted-foreground">{app.location}</span>}
         </div>
+
+        {/* Completeness bar + next action */}
+        <div className="flex items-center gap-3 pt-1">
+          <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${score}%`, backgroundColor: color }}
+            />
+          </div>
+          <span className="text-xs font-bold tabular-nums" style={{ color }}>{score}%</span>
+          {nextAction && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/60 px-2 py-1 rounded-lg">
+              <Zap className="h-3 w-3 text-amber-500 shrink-0" />
+              <span className="truncate max-w-[200px]">{nextAction}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Core fields (2-col grid, inline edit) */}
@@ -559,12 +716,11 @@ export function ApplicationDetailPage() {
           <InlineEdit label="Location" value={app.location ?? ''} onSave={v => save('location', v)} />
           <InlineEdit label="Salary info" value={app.salary_info ?? ''} onSave={v => save('salary_info', v)} />
           <InlineEdit label="Source" value={app.source ?? ''} onSave={v => save('source', v)} />
-          <InlineEdit label="Posting URL" value={app.posting_url ?? ''} onSave={v => save('posting_url', v)} />
-          <InlineEdit label="Date discovered" value={app.date_discovered ?? ''} type="date" onSave={v => save('date_discovered', v)} />
-          <InlineEdit label="Date applied" value={app.date_applied ?? ''} type="date" onSave={v => save('date_applied', v)} />
-          <div className="sm:col-span-2 flex items-center gap-2">
-            <InlineEdit label="Deadline" value={app.deadline ?? ''} type="date" onSave={v => save('deadline', v)} />
-            {app.deadline && <span className="text-xs text-muted-foreground mt-4">({formatDate(app.deadline)})</span>}
+          <UrlField label="Posting URL" value={app.posting_url ?? ''} onSave={v => save('posting_url', v)} />
+          <InlineEdit label="Date discovered" value={app.date_discovered ?? ''} displayValue={app.date_discovered ? formatDate(app.date_discovered) : undefined} type="date" onSave={v => save('date_discovered', v)} />
+          <InlineEdit label="Date applied" value={app.date_applied ?? ''} displayValue={app.date_applied ? formatDate(app.date_applied) : undefined} type="date" onSave={v => save('date_applied', v)} />
+          <div className="sm:col-span-2">
+            <InlineEdit label="Deadline" value={app.deadline ?? ''} displayValue={app.deadline ? formatDate(app.deadline) : undefined} type="date" onSave={v => save('deadline', v)} />
           </div>
           <div className="sm:col-span-2 space-y-1">
             <Label className="text-xs text-muted-foreground">Notes</Label>

@@ -1,8 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
+import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { CommandPalette } from '@/components/common/CommandPalette'
+import { ShortcutsOverlay } from '@/components/common/ShortcutsOverlay'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SignupPage } from '@/pages/auth/SignupPage'
@@ -32,37 +36,73 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+/** Global keyboard shortcut handler — lives inside Router so useNavigate works */
+function GlobalShortcuts({ onCmd }: { onCmd: () => void }) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [showShortcuts, setShowShortcuts] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    function handler(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || (e.target as HTMLElement).isContentEditable
+      // Cmd+K / Ctrl+K → command palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); onCmd(); return }
+      if (isInput) return
+      switch (e.key) {
+        case 'n': case 'N': e.preventDefault(); navigate('/applications/new'); break
+        case 'k': case 'K': e.preventDefault(); navigate('/dashboard'); break
+        case 'l': case 'L': e.preventDefault(); navigate('/applications'); break
+        case 'c': case 'C': e.preventDefault(); navigate('/calendar'); break
+        case 'u': case 'U': e.preventDefault(); navigate('/contacts'); break
+        case '?': setShowShortcuts(true); break
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [user, navigate, onCmd])
+
+  return <ShortcutsOverlay open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+}
+
 function AppRoutes() {
+  const [cmdOpen, setCmdOpen] = useState(false)
+
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/applications" element={<ApplicationsPage />} />
-        <Route path="/applications/new" element={<NewApplicationPage />} />
-        <Route path="/applications/:id" element={<ApplicationDetailPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
-      </Route>
-    </Routes>
+    <>
+      <GlobalShortcuts onCmd={() => setCmdOpen(true)} />
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/applications" element={<ApplicationsPage />} />
+          <Route path="/applications/new" element={<NewApplicationPage />} />
+          <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+        </Route>
+      </Routes>
+    </>
   )
 }
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <TooltipProvider>
-            <AppRoutes />
-            <Toaster position="bottom-right" richColors />
-          </TooltipProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <TooltipProvider>
+              <AppRoutes />
+              <Toaster position="bottom-right" richColors />
+            </TooltipProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }
