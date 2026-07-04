@@ -220,14 +220,20 @@ export function Sidebar() {
           </button>
 
           <div className="flex items-center gap-2 px-2 py-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full gradient-primary text-white text-[10px] font-bold">
-              {initials}
-            </div>
-            <p className="flex-1 text-xs text-muted-foreground truncate">{email}</p>
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2 flex-1 min-w-0 rounded-lg hover:bg-muted/60 transition-colors -mx-1 px-1 py-1 group"
+              title="Settings & profile"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full gradient-primary text-white text-[10px] font-bold ring-1 ring-white/10 group-hover:ring-primary/30 transition-all">
+                {initials}
+              </div>
+              <p className="flex-1 text-xs text-muted-foreground truncate group-hover:text-foreground transition-colors">{email}</p>
+            </button>
             <button
               onClick={handleSignOut}
               title="Sign out"
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted shrink-0"
             >
               <LogOut className="h-3.5 w-3.5" />
             </button>

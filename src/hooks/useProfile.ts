@@ -75,6 +75,22 @@ export function useUploadAvatar() {
   })
 }
 
+export function useChangePassword() {
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {
+      // Re-authenticate to verify current password before updating
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({
+        email: user!.email!,
+        password: currentPassword,
+      })
+      if (reAuthError) throw new Error('Current password is incorrect.')
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+    },
+  })
+}
+
 export function useDeleteAccount() {
   return useMutation({
     mutationFn: async () => {
