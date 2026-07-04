@@ -654,6 +654,13 @@ export function ApplicationDetailPage() {
               </a>
             </Button>
           )}
+          {app.application_url && (
+            <Button size="sm" asChild className="gradient-primary text-white border-0">
+              <a href={app.application_url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3.5 w-3.5 mr-1" /> Apply now
+              </a>
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="text-destructive hover:text-destructive border-destructive/30" onClick={handleDelete}>
             <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
           </Button>
@@ -713,6 +720,7 @@ export function ApplicationDetailPage() {
           <InlineEdit label="Salary info" value={app.salary_info ?? ''} onSave={v => save('salary_info', v)} />
           <InlineEdit label="Source" value={app.source ?? ''} onSave={v => save('source', v)} />
           <UrlField label="Posting URL" value={app.posting_url ?? ''} onSave={v => save('posting_url', v)} />
+          <UrlField label="Application link" value={app.application_url ?? ''} onSave={v => save('application_url', v)} />
           <InlineEdit label="Date discovered" value={app.date_discovered ?? ''} displayValue={app.date_discovered ? formatDate(app.date_discovered) : undefined} type="date" onSave={v => save('date_discovered', v)} />
           <InlineEdit label="Date applied" value={app.date_applied ?? ''} displayValue={app.date_applied ? formatDate(app.date_applied) : undefined} type="date" onSave={v => save('date_applied', v)} />
           <div className="sm:col-span-2">

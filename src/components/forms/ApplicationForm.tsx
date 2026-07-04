@@ -17,6 +17,7 @@ const schema = z.object({
   location: z.string().optional(),
   remote_type: z.enum(['Remote', 'Hybrid', 'Onsite', ''] as const).optional(),
   posting_url: z.string().url('Enter a valid URL (https://…)').optional().or(z.literal('')),
+  application_url: z.string().url('Enter a valid URL (https://…)').optional().or(z.literal('')),
   source: z.string().optional(),
   stage: z.enum(PIPELINE_STAGES as [PipelineStage, ...PipelineStage[]]),
   priority: z.enum(['High', 'Medium', 'Low'] as const),
@@ -54,6 +55,7 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
       location: defaultValues?.location ?? '',
       remote_type: (defaultValues?.remote_type ?? '') as FormValues['remote_type'],
       posting_url: defaultValues?.posting_url ?? '',
+      application_url: defaultValues?.application_url ?? '',
       source: defaultValues?.source ?? '',
       stage: defaultValues?.stage ?? 'Researching',
       priority: defaultValues?.priority ?? 'Medium',
@@ -73,6 +75,7 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
       location: values.location || null,
       remote_type: (values.remote_type || null) as Application['remote_type'],
       posting_url: values.posting_url || null,
+      application_url: values.application_url || null,
       source: values.source || null,
       stage: values.stage,
       priority: values.priority,
@@ -220,11 +223,25 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
             <Input
               id="posting_url"
               type="url"
-              placeholder="https://careers.company.com/…"
+              placeholder="https://linkedin.com/jobs/…"
               {...register('posting_url')}
             />
             {errors.posting_url && <p className="text-xs text-destructive">{errors.posting_url.message}</p>}
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="application_url">
+            Company application link{' '}
+            <span className="text-xs font-normal text-muted-foreground">— the actual portal where you apply</span>
+          </Label>
+          <Input
+            id="application_url"
+            type="url"
+            placeholder="https://company.greenhouse.io/jobs/…"
+            {...register('application_url')}
+          />
+          {errors.application_url && <p className="text-xs text-destructive">{errors.application_url.message}</p>}
         </div>
       </div>
 

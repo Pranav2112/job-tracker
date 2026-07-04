@@ -12,6 +12,20 @@ export type InterviewFormat = 'Phone' | 'Video' | 'Onsite'
 export type InterviewOutcome = 'Pending' | 'Passed' | 'Failed' | 'Cancelled'
 export type OfferOutcome = 'Accepted' | 'Declined' | 'Expired'
 
+export interface Profile {
+  id: string
+  full_name: string | null
+  display_name: string | null
+  bio: string | null
+  location: string | null
+  avatar_url: string | null
+  website_url: string | null
+  phone: string | null
+  provider: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Application {
   id: string
   user_id: string
@@ -21,6 +35,7 @@ export interface Application {
   location: string | null
   remote_type: RemoteType | null
   posting_url: string | null
+  application_url: string | null
   source: string | null
   stage: PipelineStage
   priority: PriorityLevel
