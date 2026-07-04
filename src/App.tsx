@@ -10,6 +10,8 @@ import { ShortcutsOverlay } from '@/components/common/ShortcutsOverlay'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SignupPage } from '@/pages/auth/SignupPage'
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ApplicationsPage } from '@/pages/ApplicationsPage'
 import { NewApplicationPage } from '@/pages/NewApplicationPage'
@@ -77,6 +79,8 @@ function AppRoutes() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/applications" element={<ApplicationsPage />} />
