@@ -53,6 +53,8 @@ function GlobalShortcuts({ onCmd }: { onCmd: () => void }) {
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || (e.target as HTMLElement).isContentEditable
       // Cmd+K / Ctrl+K → command palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); onCmd(); return }
+      // Ignore all other Cmd/Ctrl/Alt combos (copy, paste, save, etc.)
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       if (isInput) return
       switch (e.key) {
         case 'n': case 'N': e.preventDefault(); navigate('/applications/new'); break
