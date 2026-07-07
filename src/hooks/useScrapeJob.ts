@@ -31,10 +31,21 @@ async function scrapeJobUrl(url: string): Promise<ScrapedJob> {
 // ─── Greenhouse — public JSON API, CORS enabled ───────────────────────────────
 
 async function scrapeGreenhouse(url: string): Promise<ScrapedJob> {
-  const match = url.match(/greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/i)
-  if (!match) return scrapeGeneric(url)
+  // Format 1: /company/jobs/123  (standard listing)
+  // Format 2: /embed/job_app?for=company&token=123  (embedded apply form)
+  const pathMatch = url.match(/greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/i)
+  let company = pathMatch?.[1]
+  let jobId   = pathMatch?.[2]
 
-  const [, company, jobId] = match
+  if (!company || !jobId) {
+    try {
+      const params = new URL(url).searchParams
+      company = params.get('for')  ?? undefined
+      jobId   = params.get('token') ?? undefined
+    } catch { /* invalid URL */ }
+  }
+
+  if (!company || !jobId) return scrapeGeneric(url)
   const base: ScrapedJob = {
     company_name: titleCase(company.replace(/-/g, ' ')),
     role_title: null, location: null, remote_type: null,
