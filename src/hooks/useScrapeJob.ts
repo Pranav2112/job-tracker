@@ -35,24 +35,23 @@ async function scrapeGreenhouse(url: string): Promise<ScrapedJob> {
   if (!match) return scrapeGeneric(url)
 
   const [, company, jobId] = match
-  const res = await fetch(
-    `https://boards-api.greenhouse.io/v1/boards/${company}/jobs/${jobId}`
-  )
-  if (!res.ok) return scrapeGeneric(url)
-
-  const data = await res.json()
-  const location: string = data.location?.name ?? ''
-
-  return {
+  const base: ScrapedJob = {
     company_name: titleCase(company.replace(/-/g, ' ')),
-    role_title:   clean(data.title ?? ''),
-    location:     location || null,
-    remote_type:  detectRemote(location),
-    salary_info:  null,
-    posting_url:  url,
-    source:       'Greenhouse',
-    detected_board: 'Greenhouse',
+    role_title: null, location: null, remote_type: null,
+    salary_info: null, posting_url: url,
+    source: 'Greenhouse', detected_board: 'Greenhouse',
   }
+
+  try {
+    const res = await fetch(
+      `https://boards-api.greenhouse.io/v1/boards/${company}/jobs/${jobId}`
+    )
+    if (!res.ok) return base   // expired job — return company name at least
+
+    const data = await res.json()
+    const location: string = data.location?.name ?? ''
+    return { ...base, role_title: clean(data.title ?? ''), location: location || null, remote_type: detectRemote(location) }
+  } catch { return base }
 }
 
 // ─── Lever — public JSON API, CORS enabled ────────────────────────────────────
@@ -62,25 +61,22 @@ async function scrapeLever(url: string): Promise<ScrapedJob> {
   if (!match) return scrapeGeneric(url)
 
   const [, company, postingId] = match
-  const res = await fetch(
-    `https://api.lever.co/v0/postings/${company}/${postingId}`
-  )
-  if (!res.ok) return scrapeGeneric(url)
-
-  const data = await res.json()
-  const location: string  = data.categories?.location   ?? ''
-  const commitment: string = data.categories?.commitment ?? ''
-
-  return {
+  const base: ScrapedJob = {
     company_name: titleCase(company.replace(/-/g, ' ')),
-    role_title:   clean(data.text ?? ''),
-    location:     location || null,
-    remote_type:  detectRemote(`${location} ${commitment}`),
-    salary_info:  null,
-    posting_url:  url,
-    source:       'Lever',
-    detected_board: 'Lever',
+    role_title: null, location: null, remote_type: null,
+    salary_info: null, posting_url: url,
+    source: 'Lever', detected_board: 'Lever',
   }
+
+  try {
+    const res = await fetch(`https://api.lever.co/v0/postings/${company}/${postingId}`)
+    if (!res.ok) return base
+
+    const data = await res.json()
+    const location: string   = data.categories?.location   ?? ''
+    const commitment: string = data.categories?.commitment ?? ''
+    return { ...base, role_title: clean(data.text ?? ''), location: location || null, remote_type: detectRemote(`${location} ${commitment}`) }
+  } catch { return base }
 }
 
 // ─── Ashby — public job board API ────────────────────────────────────────────
@@ -90,38 +86,40 @@ async function scrapeAshby(url: string): Promise<ScrapedJob> {
   if (!match) return scrapeGeneric(url)
 
   const [, company, jobId] = match
-  const res = await fetch(
-    `https://api.ashbyhq.com/posting-api/job-board/${company}`
-  )
-  if (!res.ok) return scrapeGeneric(url)
-
-  const data = await res.json()
-  const job = (data.jobPostings ?? []).find(
-    (j: { id: string }) => j.id === jobId
-  )
-  if (!job) return scrapeGeneric(url)
-
-  const location: string = job.locationName ?? job.location ?? ''
-
-  return {
+  const base: ScrapedJob = {
     company_name: titleCase(company.replace(/-/g, ' ')),
-    role_title:   clean(job.title ?? ''),
-    location:     location || null,
-    remote_type:  detectRemote(`${location} ${job.isRemote ? 'remote' : ''}`),
-    salary_info:  null,
-    posting_url:  url,
-    source:       'Ashby',
-    detected_board: 'Ashby',
+    role_title: null, location: null, remote_type: null,
+    salary_info: null, posting_url: url,
+    source: 'Ashby', detected_board: 'Ashby',
   }
+
+  try {
+    const res = await fetch(`https://api.ashbyhq.com/posting-api/job-board/${company}`)
+    if (!res.ok) return base
+
+    const data = await res.json()
+    const job = (data.jobPostings ?? []).find((j: { id: string }) => j.id === jobId)
+    if (!job) return base
+
+    const location: string = job.locationName ?? job.location ?? ''
+    return { ...base, role_title: clean(job.title ?? ''), location: location || null, remote_type: detectRemote(`${location} ${job.isRemote ? 'remote' : ''}`) }
+  } catch { return base }
 }
 
 // ─── Generic — CORS proxy + HTML parsing ─────────────────────────────────────
 // Uses corsproxy.io (free, low-volume) to fetch any page server-side.
 
 async function scrapeGeneric(url: string): Promise<ScrapedJob> {
+  const partial: ScrapedJob = {
+    company_name: extractCompanyFromUrl(url), role_title: null,
+    location: null, remote_type: null, salary_info: null,
+    posting_url: url, source: null, detected_board: 'Web',
+  }
+
   const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`
-  const res = await fetch(proxyUrl)
-  if (!res.ok) throw new Error(`Could not load page (HTTP ${res.status})`)
+  let res: Response
+  try { res = await fetch(proxyUrl) } catch { return partial }
+  if (!res.ok) return partial   // blocked/403 — still save the URL + company guess
 
   const html = await res.text()
   const head  = html.slice(0, 8000)
