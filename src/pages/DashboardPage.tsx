@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Calendar, Target, TrendingUp, Loader2, Zap } from 'lucide-react'
-import { isWithinInterval, addDays, parseISO, startOfDay } from 'date-fns'
+import { AlertTriangle, Calendar, Target, TrendingUp, Loader2, Zap, Clock } from 'lucide-react'
+import { isWithinInterval, addDays, parseISO, startOfDay, startOfWeek, endOfWeek, subWeeks } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { useApplications } from '@/hooks/useApplications'
@@ -67,6 +67,15 @@ function StatCard({ title, value, icon: Icon, sub, accent = 'default' }: StatCar
   )
 }
 
+type TimeFilter = 'today' | 'this-week' | 'last-week' | 'all-time'
+
+const TIME_FILTERS: { key: TimeFilter; label: string }[] = [
+  { key: 'today',     label: 'Today' },
+  { key: 'this-week', label: 'This week' },
+  { key: 'last-week', label: 'Last week' },
+  { key: 'all-time',  label: 'All time' },
+]
+
 type Filter = 'all' | 'priority-high' | 'needs-attention' | 'internship' | 'full-time'
 
 const FILTERS: { key: Filter; label: string }[] = [
@@ -82,6 +91,7 @@ export function DashboardPage() {
   const { data: applications = [], isLoading } = useApplications()
   const [filter, setFilter] = useState<Filter>('all')
   const headerRef = useRef<HTMLDivElement>(null)
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('this-week')
   const { challenges, seasonGoal, seasonProgress } = useGamification()
 
   const stats = useMemo(() => {
@@ -102,6 +112,33 @@ export function DashboardPage() {
       default: return applications
     }
   }, [applications, filter])
+
+  const recentApps = useMemo(() => {
+    const now  = new Date()
+    const todayStart = startOfDay(now)
+    const weekStart  = startOfWeek(now, { weekStartsOn: 1 })
+    const weekEnd    = endOfWeek(now, { weekStartsOn: 1 })
+    const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
+    const lastWeekEnd   = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
+
+    let filtered: Application[]
+    switch (timeFilter) {
+      case 'today':
+        filtered = applications.filter(a => parseISO(a.created_at) >= todayStart)
+        break
+      case 'this-week':
+        filtered = applications.filter(a => isWithinInterval(parseISO(a.created_at), { start: weekStart, end: weekEnd }))
+        break
+      case 'last-week':
+        filtered = applications.filter(a => isWithinInterval(parseISO(a.created_at), { start: lastWeekStart, end: lastWeekEnd }))
+        break
+      default:
+        filtered = [...applications]
+    }
+    return filtered
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 8)
+  }, [applications, timeFilter])
 
   const upcomingDeadlines = useMemo(() => {
     const today = startOfDay(new Date())
@@ -184,6 +221,74 @@ export function DashboardPage() {
 
         {/* Right sidebar — deadlines + gamification */}
         <aside className="hidden lg:flex flex-col w-72 border-l shrink-0 p-4 gap-4 overflow-y-auto scrollbar-thin">
+
+          {/* ── Time filter ──────────────────────────────────────────────────── */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Applications
+              </p>
+            </div>
+
+            {/* Tab strip */}
+            <div className="flex gap-1 p-1 rounded-xl bg-muted/50 border">
+              {TIME_FILTERS.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setTimeFilter(f.key)}
+                  className={cn(
+                    'flex-1 rounded-lg py-1 text-[11px] font-medium transition-all duration-150',
+                    timeFilter === f.key
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* App list */}
+            {recentApps.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-5 text-center">
+                <div className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {timeFilter === 'today' ? 'No applications today' :
+                   timeFilter === 'this-week' ? 'No applications this week' :
+                   timeFilter === 'last-week' ? 'No applications last week' :
+                   'No applications yet'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {recentApps.map(app => (
+                  <button
+                    key={app.id}
+                    onClick={() => navigate(`/applications/${app.id}`)}
+                    className="group w-full text-left px-3 py-2.5 rounded-xl border bg-card card-shadow hover:card-shadow-hover transition-all duration-150 hover:-translate-y-0.5"
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="text-xs font-semibold truncate group-hover:text-primary transition-colors">
+                        {app.company_name}
+                      </p>
+                      <StageBadge stage={app.stage} />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{app.role_title}</p>
+                  </button>
+                ))}
+                <p className="text-[10px] text-muted-foreground text-center pt-1">
+                  {recentApps.length} application{recentApps.length !== 1 ? 's' : ''}
+                  {timeFilter === 'today' && ' added today'}
+                  {timeFilter === 'this-week' && ' this week'}
+                  {timeFilter === 'last-week' && ' last week'}
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Season Goal */}
           <SeasonGoal appCount={applications.length} goal={seasonGoal} progress={seasonProgress} />
 
