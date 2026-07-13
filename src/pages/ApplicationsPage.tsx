@@ -202,11 +202,11 @@ export function ApplicationsPage() {
   )
 
   return (
-    <div className="p-6 space-y-4 pb-24">
+    <div className="p-4 sm:p-6 space-y-4 pb-24">
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2 justify-between">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <Input placeholder="Search company or role…" value={globalFilter} onChange={e => setGlobalFilter(e.target.value)} className="h-9 w-56" />
+          <Input placeholder="Search company or role…" value={globalFilter} onChange={e => setGlobalFilter(e.target.value)} className="h-9 w-full sm:w-56" />
           <Select value={stageFilter} onValueChange={v => setStageFilter(v as PipelineStage | 'all')}>
             <SelectTrigger className="h-9 w-44"><SelectValue placeholder="All stages" /></SelectTrigger>
             <SelectContent>
@@ -238,8 +238,57 @@ export function ApplicationsPage() {
         </Button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border overflow-hidden card-shadow">
+      {/* ── Mobile card list ───────────────────────────────────────── */}
+      <div className="md:hidden space-y-2">
+        {table.getRowModel().rows.length === 0 ? (
+          <div className="text-center text-muted-foreground py-16 text-sm">No applications found.</div>
+        ) : (
+          table.getRowModel().rows.map(row => {
+            const app = row.original
+            const { flag, reason } = needsAttention(app)
+            return (
+              <button
+                key={app.id}
+                onClick={() => navigate(`/applications/${app.id}`)}
+                className="w-full text-left p-4 rounded-xl border bg-card card-shadow hover:card-shadow-hover transition-all duration-150 active:scale-[0.99] space-y-2.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      {flag && <span className="text-amber-500 shrink-0 text-xs" title={reason}>⚠</span>}
+                      <p className="font-semibold text-sm truncate">{app.company_name}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{app.role_title}</p>
+                  </div>
+                  <StageBadge stage={app.stage} />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <PriorityBadge priority={app.priority} />
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {APP_TYPE_LABELS[app.app_type]}
+                  </span>
+                  {app.deadline && (
+                    <span className={cn(
+                      'text-[11px] font-medium px-2 py-0.5 rounded-full',
+                      Math.ceil((new Date(app.deadline).getTime() - Date.now()) / 86400000) <= 7
+                        ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
+                        : 'text-muted-foreground bg-muted'
+                    )}>
+                      Due {formatDate(app.deadline, 'MMM d')}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })
+        )}
+        <p className="text-xs text-muted-foreground pt-1">
+          {table.getRowModel().rows.length} of {applications.length} applications
+        </p>
+      </div>
+
+      {/* ── Desktop table ──────────────────────────────────────────── */}
+      <div className="hidden md:block rounded-xl border overflow-hidden card-shadow">
         <table className="w-full border-collapse">
           <thead>
             {table.getHeaderGroups().map(hg => (
@@ -274,7 +323,7 @@ export function ApplicationsPage() {
         </table>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="hidden md:block text-xs text-muted-foreground">
         {table.getRowModel().rows.length} of {applications.length} application{applications.length !== 1 ? 's' : ''}
         {selectedIds.length > 0 && <span className="ml-2 text-primary font-medium">· {selectedIds.length} selected</span>}
       </p>

@@ -167,21 +167,21 @@ export function DashboardPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Stats + filters */}
-      <div className="px-6 pt-5 pb-4 space-y-4 shrink-0" ref={headerRef}>
+      <div className="px-4 sm:px-6 pt-5 pb-4 space-y-4 shrink-0" ref={headerRef}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard title="Total Applications" value={stats.total} icon={Target} accent="default" />
-          <StatCard title="Active Pipeline" value={stats.active} icon={TrendingUp} sub="not in terminal stage" accent="green" />
-          <StatCard title="Deadlines This Week" value={stats.deadlines} icon={Calendar} accent="amber" />
-          <StatCard title="Needs Attention" value={stats.attention} icon={AlertTriangle} accent="red" />
+          <StatCard title="Total" value={stats.total} icon={Target} accent="default" />
+          <StatCard title="Active" value={stats.active} icon={TrendingUp} sub="in pipeline" accent="green" />
+          <StatCard title="Deadlines" value={stats.deadlines} icon={Calendar} sub="this week" accent="amber" />
+          <StatCard title="Attention" value={stats.attention} icon={AlertTriangle} sub="needs action" accent="red" />
         </div>
 
-        {/* Filter pills */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Filter pills — horizontally scrollable on mobile */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-1">
           {FILTERS.map(f => (
             <button
               key={f.key}
               className={cn(
-                'filter-btn px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150',
+                'filter-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150',
                 filter === f.key
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/50'
@@ -194,8 +194,98 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Main: Kanban + sidebar */}
-      <div className="flex-1 flex min-h-0">
+      {/* ── Mobile view: time filter + list ──────────────────────── */}
+      <div className="lg:hidden flex-1 overflow-y-auto px-4 pb-4 space-y-4">
+        {/* Time filter tabs */}
+        <div className="space-y-3">
+          <div className="flex gap-1 p-1 rounded-xl bg-muted/50 border">
+            {TIME_FILTERS.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setTimeFilter(f.key)}
+                className={cn(
+                  'flex-1 rounded-lg py-1.5 text-[11px] font-medium transition-all duration-150',
+                  timeFilter === f.key
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {recentApps.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center">
+                <Zap className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">No applications</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {timeFilter === 'today' ? 'for today' :
+                   timeFilter === 'this-week' ? 'this week' :
+                   timeFilter === 'last-week' ? 'last week' : 'yet'}
+                </p>
+              </div>
+              <Button size="sm" onClick={() => navigate('/applications/new')}>
+                Add application
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentApps.map(app => (
+                <button
+                  key={app.id}
+                  onClick={() => navigate(`/applications/${app.id}`)}
+                  className="group w-full text-left p-3.5 rounded-xl border bg-card card-shadow hover:card-shadow-hover transition-all duration-150 active:scale-[0.99]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                      {app.company_name}
+                    </p>
+                    <StageBadge stage={app.stage} />
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mt-1">{app.role_title}</p>
+                </button>
+              ))}
+              <p className="text-[11px] text-muted-foreground text-center pt-1">
+                {recentApps.length} application{recentApps.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Upcoming deadlines on mobile */}
+        {upcomingDeadlines.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Deadlines this week
+              </p>
+            </div>
+            {upcomingDeadlines.map(app => (
+              <button
+                key={app.id}
+                onClick={() => navigate(`/applications/${app.id}`)}
+                className="group w-full text-left p-3 rounded-xl border bg-card card-shadow"
+              >
+                <p className="text-sm font-semibold truncate">{app.company_name}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <StageBadge stage={app.stage} />
+                  <span className="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">
+                    {formatDate(app.deadline, 'MMM d')}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Desktop view: Kanban + sidebar ───────────────────────── */}
+      <div className="hidden lg:flex flex-1 min-h-0">
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-x-auto overflow-y-auto scrollbar-thin">
             <div className="py-2 min-h-full">
@@ -220,7 +310,7 @@ export function DashboardPage() {
         </div>
 
         {/* Right sidebar — deadlines + gamification */}
-        <aside className="hidden lg:flex flex-col w-72 border-l shrink-0 p-4 gap-4 overflow-y-auto scrollbar-thin">
+        <aside className="flex flex-col w-72 border-l shrink-0 p-4 gap-4 overflow-y-auto scrollbar-thin">
 
           {/* ── Time filter ──────────────────────────────────────────────────── */}
           <div className="space-y-3">
