@@ -40,8 +40,12 @@ function NavContent({ onNav }: NavContentProps) {
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (searchOpen) setTimeout(() => searchRef.current?.focus(), 50)
-    else setSearchQuery('')
+    if (searchOpen) {
+      const id = setTimeout(() => searchRef.current?.focus(), 50)
+      return () => clearTimeout(id)
+    } else {
+      setSearchQuery('')
+    }
   }, [searchOpen])
 
   const searchResults = searchQuery.trim()

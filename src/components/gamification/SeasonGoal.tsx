@@ -16,11 +16,14 @@ export function SeasonGoal({ appCount, goal, progress }: SeasonGoalProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft]     = useState(goal.toString())
 
+  // Sync draft when goal prop changes externally (e.g. DB refresh)
+  useEffect(() => { setDraft(goal.toString()) }, [goal])
+
   useEffect(() => {
     if (barRef.current) {
-      gsap.fromTo(barRef.current, { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'power3.out', transformOrigin: 'left', delay: 0.3 })
+      gsap.to(barRef.current, { scaleX: Math.min(1, progress / 100), duration: 1, ease: 'power3.out', transformOrigin: 'left', delay: 0.3 })
     }
-  }, [])
+  }, [progress])
 
   async function handleSave() {
     const v = parseInt(draft)

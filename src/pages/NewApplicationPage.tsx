@@ -61,10 +61,14 @@ export function NewApplicationPage() {
         posting_url:   result.posting_url   ?? '',
         source:        result.source        ?? '',
       })
+      const hasFields = [result.role_title, result.company_name, result.location, result.remote_type, result.salary_info].some(Boolean)
+      if (!hasFields) {
+        setJdOpen(true)
+      }
       const found = [result.role_title, result.company_name].filter(Boolean).join(' at ')
       toast.success(found ? `Found: ${found}` : 'URL saved — fill in any missing fields')
     } catch (err: unknown) {
-      setScrapeErr(err instanceof Error ? err.message : 'Could not read that URL.')
+      setScrapeErr(err instanceof Error ? err.message : 'Could not read that URL. Try pasting the job description below instead.')
     }
   }
 

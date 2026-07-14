@@ -300,7 +300,7 @@ export function useUpdateResearchNote() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async ({ id, content }: { id: string; applicationId: string; content: string }) => {
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
       const { data, error } = await supabase
         .from('research_notes')
         .update({ content })

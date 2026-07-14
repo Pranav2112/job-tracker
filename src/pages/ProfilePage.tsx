@@ -87,7 +87,7 @@ export function ProfilePage() {
 
   const pwStrength       = getPasswordStrength(newPw)
   const passwordsMatch   = confirmPw.length === 0 || newPw === confirmPw
-  const isEmailProvider  = profile?.provider === 'email' || (!profile?.provider?.includes('google'))
+  const isEmailProvider  = !!profile && (profile.provider === 'email' || !profile.provider?.includes('google'))
 
   // Sync profile data into form on load
   useEffect(() => {

@@ -30,7 +30,7 @@ import { formatDate, formatCurrency } from '@/lib/utils'
 import { computeCompleteness, scoreColor } from '@/lib/completeness'
 import { animateIn } from '@/lib/animations'
 import { PIPELINE_STAGES, STAGE_LABELS, APP_TYPE_LABELS, REMOTE_TYPE_LABELS } from '@/lib/constants'
-import type { Application, Document, PipelineStage } from '@/types'
+import type { Application, Document, PipelineStage, InterviewRound, Offer } from '@/types'
 
 // ─── Quick edit inline field ──────────────────────────────────────────────────
 function InlineEdit({ label, value, displayValue, onSave, type = 'text' }: {
@@ -218,7 +218,7 @@ function DocumentsTab({ applicationId }: { applicationId: string }) {
 }
 
 // ─── Single Interview Round Card (supports inline edit) ───────────────────────
-function InterviewRoundCard({ round: r, applicationId }: { round: import('@/types').InterviewRound; applicationId: string }) {
+function InterviewRoundCard({ round: r, applicationId }: { round: InterviewRound; applicationId: string }) {
   const update = useUpdateInterviewRound()
   const del = useDeleteInterviewRound()
   const [editing, setEditing] = useState(false)
@@ -286,7 +286,7 @@ function InterviewsTab({ applicationId }: { applicationId: string }) {
   const [form, setForm] = useState({ round_type: 'PhoneScreen', scheduled_at: '', format: 'Video', prep_notes: '', post_notes: '', outcome: 'Pending' })
 
   async function handleAdd() {
-    await create.mutateAsync({ ...form, application_id: applicationId, round_type: form.round_type as never, format: form.format as never, outcome: form.outcome as never, scheduled_at: form.scheduled_at || null })
+    await create.mutateAsync({ ...form, application_id: applicationId, round_type: form.round_type as InterviewRound['round_type'], format: form.format as InterviewRound['format'], outcome: form.outcome as InterviewRound['outcome'], scheduled_at: form.scheduled_at || null })
     setAdding(false)
     setForm({ round_type: 'PhoneScreen', scheduled_at: '', format: 'Video', prep_notes: '', post_notes: '', outcome: 'Pending' })
   }
@@ -389,7 +389,7 @@ function ResearchTab({ applicationId }: { applicationId: string }) {
 
   async function handleSaveEdit(id: string) {
     if (!editDraft.trim()) return
-    await update.mutateAsync({ id, applicationId, content: editDraft.trim() })
+    await update.mutateAsync({ id, content: editDraft.trim() })
     setEditingId(null)
   }
 
@@ -475,9 +475,16 @@ function OfferTab({ applicationId }: { applicationId: string }) {
   const { data: offer } = useOffer(applicationId)
   const upsert = useUpsertOffer()
   const addEntry = useAddNegotiationEntry()
-  const [editing, setEditing] = useState(!offer)
+  const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ base_salary: '', signing_bonus: '', stipend: '', housing: '', equity: '', other_perks: '', offer_deadline: '', final_outcome: '' })
   const [log, setLog] = useState('')
+  const didInitOffer = useRef(false)
+  useEffect(() => {
+    if (!didInitOffer.current && offer !== undefined) {
+      didInitOffer.current = true
+      if (!offer) setEditing(true)
+    }
+  }, [offer])
 
   const f = (k: keyof typeof form) => ({ value: form[k], onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(p => ({ ...p, [k]: e.target.value })) })
 
@@ -491,7 +498,7 @@ function OfferTab({ applicationId }: { applicationId: string }) {
       equity: form.equity || null,
       other_perks: form.other_perks || null,
       offer_deadline: form.offer_deadline || null,
-      final_outcome: (form.final_outcome || null) as never,
+      final_outcome: (form.final_outcome || null) as Offer['final_outcome'],
     })
     setEditing(false)
   }

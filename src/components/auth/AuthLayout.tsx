@@ -36,19 +36,19 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       <div
         ref={leftRef}
         className="hidden lg:flex lg:w-[480px] shrink-0 flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #0f0f1a 0%, #1a1240 60%, #0f0f1a 100%)' }}
+        style={{ background: 'linear-gradient(145deg, #0a1a12 0%, #0d2a1c 60%, #0a1a12 100%)' }}
       >
         {/* Subtle grid */}
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: 'linear-gradient(#6366f1 1px, transparent 1px), linear-gradient(90deg, #6366f1 1px, transparent 1px)',
+            backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)',
             backgroundSize: '40px 40px',
           }}
         />
         {/* Glow blob */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-20 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)' }}
         />
 
         {/* Logo */}
@@ -96,7 +96,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         {/* Mobile-only logo */}
         <div className="lg:hidden flex items-center gap-2.5 mb-8">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
-            <Briefcase className="h-4.5 w-4.5 text-white" />
+            <Briefcase className="h-[18px] w-[18px] text-white" />
           </div>
           <p className="font-bold text-base">AppTracker</p>
         </div>

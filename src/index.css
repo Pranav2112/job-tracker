@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 11%;
 
-    /* ── Brand: professional blue (not indigo-purple) ─────────── */
-    --primary: 221 83% 53%;
+    /* ── Brand: emerald green ────────────────────────────────── */
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
     /* ── Supporting tones ─────────────────────────────────────── */
@@ -23,21 +23,21 @@
     --secondary-foreground: 215 20% 22%;
     --muted: 214 13% 96%;
     --muted-foreground: 215 14% 50%;
-    --accent: 221 83% 53% / 0.08;
-    --accent-foreground: 221 83% 45%;
+    --accent: 160 84% 39% / 0.08;
+    --accent-foreground: 160 84% 30%;
     --destructive: 0 80% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 13% 90%;
     --input: 214 13% 90%;
-    --ring: 221 83% 53%;
+    --ring: 160 84% 39%;
     --radius: 0.6rem;
 
     /* ── Custom ───────────────────────────────────────────────── */
     --sidebar-bg: 220 18% 97%;
     --sidebar-border: 214 13% 91%;
     --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.03);
-    --card-shadow-hover: 0 8px 30px -6px rgb(37 99 235 / 0.12), 0 3px 12px -3px rgb(0 0 0 / 0.06);
-    --glow-primary: 0 0 0 3px rgb(37 99 235 / 0.14);
+    --card-shadow-hover: 0 8px 30px -6px rgb(5 150 105 / 0.14), 0 3px 12px -3px rgb(0 0 0 / 0.06);
+    --glow-primary: 0 0 0 3px rgb(5 150 105 / 0.18);
   }
 
   .dark {
@@ -47,25 +47,25 @@
     --card-foreground: 213 18% 93%;
     --popover: 222 21% 11%;
     --popover-foreground: 213 18% 93%;
-    --primary: 217 91% 60%;
+    --primary: 160 84% 50%;
     --primary-foreground: 0 0% 100%;
     --secondary: 222 17% 16%;
     --secondary-foreground: 213 18% 84%;
     --muted: 222 17% 13%;
     --muted-foreground: 213 13% 50%;
-    --accent: 217 91% 60% / 0.12;
-    --accent-foreground: 217 91% 70%;
+    --accent: 160 84% 50% / 0.12;
+    --accent-foreground: 160 84% 64%;
     --destructive: 0 58% 40%;
     --destructive-foreground: 0 0% 100%;
     --border: 222 17% 18%;
     --input: 222 17% 18%;
-    --ring: 217 91% 60%;
+    --ring: 160 84% 50%;
 
     --sidebar-bg: 222 24% 7%;
     --sidebar-border: 222 17% 13%;
     --card-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.28), 0 1px 2px -1px rgb(0 0 0 / 0.18);
-    --card-shadow-hover: 0 8px 30px -6px rgb(59 130 246 / 0.22), 0 3px 12px -3px rgb(0 0 0 / 0.35);
-    --glow-primary: 0 0 0 3px rgb(59 130 246 / 0.22);
+    --card-shadow-hover: 0 8px 30px -6px rgb(16 185 129 / 0.24), 0 3px 12px -3px rgb(0 0 0 / 0.35);
+    --glow-primary: 0 0 0 3px rgb(16 185 129 / 0.26);
   }
 }
 
@@ -95,12 +95,12 @@
 
   .sidebar-bg { background: hsl(var(--sidebar-bg)); border-color: hsl(var(--sidebar-border)); }
 
-  /* Blue → slightly violet, much more professional than pure indigo-purple */
+  /* Emerald gradient */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(245 80% 62%) 100%);
+    background: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(152 73% 28%) 100%);
   }
   .gradient-text {
-    background: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(245 80% 62%) 100%);
+    background: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(152 73% 28%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

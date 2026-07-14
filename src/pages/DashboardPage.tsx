@@ -5,11 +5,10 @@ import { isWithinInterval, addDays, parseISO, startOfDay, startOfWeek, endOfWeek
 import { Button } from '@/components/ui/button'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { useApplications } from '@/hooks/useApplications'
-import { needsAttention, formatDate } from '@/lib/utils'
+import { needsAttention, formatDate, cn } from '@/lib/utils'
 import { TERMINAL_STAGES } from '@/lib/constants'
 import { StageBadge } from '@/components/common/StageBadge'
 import { animateCounter, animateListIn, animateIn } from '@/lib/animations'
-import { cn } from '@/lib/utils'
 import { useGamification } from '@/hooks/useGamification'
 import { SeasonGoal } from '@/components/gamification/SeasonGoal'
 import { WeeklyChallenges } from '@/components/gamification/WeeklyChallenges'
@@ -121,21 +120,21 @@ export function DashboardPage() {
     const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
     const lastWeekEnd   = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
 
-    let filtered: Application[]
+    let filteredByTime: Application[]
     switch (timeFilter) {
       case 'today':
-        filtered = applications.filter(a => parseISO(a.created_at) >= todayStart)
+        filteredByTime = applications.filter(a => parseISO(a.created_at) >= todayStart)
         break
       case 'this-week':
-        filtered = applications.filter(a => isWithinInterval(parseISO(a.created_at), { start: weekStart, end: weekEnd }))
+        filteredByTime = applications.filter(a => isWithinInterval(parseISO(a.created_at), { start: weekStart, end: weekEnd }))
         break
       case 'last-week':
-        filtered = applications.filter(a => isWithinInterval(parseISO(a.created_at), { start: lastWeekStart, end: lastWeekEnd }))
+        filteredByTime = applications.filter(a => isWithinInterval(parseISO(a.created_at), { start: lastWeekStart, end: lastWeekEnd }))
         break
       default:
-        filtered = [...applications]
+        filteredByTime = [...applications]
     }
-    return filtered
+    return filteredByTime
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .slice(0, 8)
   }, [applications, timeFilter])
@@ -168,7 +167,48 @@ export function DashboardPage() {
     <div className="h-full flex flex-col">
       {/* Stats + filters */}
       <div className="px-4 sm:px-6 pt-5 pb-4 space-y-4 shrink-0" ref={headerRef}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Mobile: compact summary bar */}
+        <div className="lg:hidden flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Target className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground font-medium">Total</p>
+              <p className="text-lg font-bold leading-none">{stats.total}</p>
+            </div>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground font-medium">Active</p>
+              <p className="text-lg font-bold leading-none">{stats.active}</p>
+            </div>
+          </div>
+          {(stats.deadlines > 0 || stats.attention > 0) && (
+            <>
+              <div className="w-px h-8 bg-border" />
+              <div className="flex items-center gap-1.5">
+                {stats.deadlines > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-full">
+                    <Calendar className="h-3 w-3" />{stats.deadlines}
+                  </span>
+                )}
+                {stats.attention > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
+                    <AlertTriangle className="h-3 w-3" />{stats.attention}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Desktop: full 4-column stat cards */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-3">
           <StatCard title="Total" value={stats.total} icon={Target} accent="default" />
           <StatCard title="Active" value={stats.active} icon={TrendingUp} sub="in pipeline" accent="green" />
           <StatCard title="Deadlines" value={stats.deadlines} icon={Calendar} sub="this week" accent="amber" />

@@ -34,11 +34,12 @@ export function FilePreviewModal({ document: doc, open, onClose }: FilePreviewMo
     loadFile()
   }, [open, doc?.id])
 
-  // Lock body scroll when open
+  // Lock body scroll when open, restore previous value on close
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
   }, [open])
 
   function cleanup() {

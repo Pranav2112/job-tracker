@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { startOfWeek, endOfWeek, parseISO, differenceInCalendarDays } from 'date-fns'
+import type { Application } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApplications } from '@/hooks/useApplications'
@@ -33,20 +34,28 @@ export function xpToLevel(xp: number) {
 
 // ─── Aggregate XP from Supabase counts ────────────────────────────────────────
 async function fetchXPCounts(userId: string) {
-  const [docs, interviews, notes, contacts, offers] = await Promise.all([
+  const now      = new Date()
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString()
+  const weekEnd   = endOfWeek(now,   { weekStartsOn: 1 }).toISOString()
+
+  const [docs, interviews, notes, contacts, offers, weeklyInterviews, weeklyNotes] = await Promise.all([
     supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('interview_rounds').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('research_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('contacts').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('offers').select('final_outcome').eq('user_id', userId),
+    supabase.from('interview_rounds').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', weekStart).lte('created_at', weekEnd),
+    supabase.from('research_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', weekStart).lte('created_at', weekEnd),
   ])
   return {
-    docCount:      docs.count      ?? 0,
-    interviewCount:interviews.count ?? 0,
-    noteCount:     notes.count     ?? 0,
-    contactCount:  contacts.count  ?? 0,
-    acceptedCount: (offers.data ?? []).filter(o => o.final_outcome === 'Accepted').length,
-    offerCount:    (offers.data ?? []).length,
+    docCount:             docs.count           ?? 0,
+    interviewCount:       interviews.count      ?? 0,
+    noteCount:            notes.count           ?? 0,
+    contactCount:         contacts.count        ?? 0,
+    acceptedCount:        (offers.data ?? []).filter(o => o.final_outcome === 'Accepted').length,
+    offerCount:           (offers.data ?? []).length,
+    weeklyInterviewCount: weeklyInterviews.count ?? 0,
+    weeklyNoteCount:      weeklyNotes.count      ?? 0,
   }
 }
 
@@ -57,8 +66,8 @@ export function computeXP(
   let xp = 0
   for (const a of apps) {
     xp += 10
-    if (a.stage === 'Offer')    xp += 40
-    if (a.stage === 'Accepted') xp += 90
+    if (a.stage === 'OfferReceived') xp += 40
+    if (a.stage === 'Accepted')      xp += 90
   }
   xp += counts.docCount       * 5
   xp += counts.interviewCount * 15
@@ -82,7 +91,7 @@ export function computeAchievements(
   counts: Awaited<ReturnType<typeof fetchXPCounts>>,
   streak: number
 ): Achievement[] {
-  const offerApps    = apps.filter(a => ['Offer', 'Accepted'].includes(a.stage))
+  const offerApps    = apps.filter(a => ['OfferReceived', 'Accepted'].includes(a.stage))
   const acceptedApps = apps.filter(a => a.stage === 'Accepted')
 
   return [
@@ -171,9 +180,9 @@ export interface Challenge {
 }
 
 export function computeWeeklyChallenges(
-  apps: { created_at: string; stage: string }[],
-  interviewCount: number,
-  noteCount: number
+  apps: Pick<Application, 'created_at' | 'stage'>[],
+  weeklyInterviewCount: number,
+  weeklyNoteCount: number
 ): Challenge[] {
   const now   = new Date()
   const start = startOfWeek(now, { weekStartsOn: 1 })
@@ -191,12 +200,12 @@ export function computeWeeklyChallenges(
       target: 3, progress: Math.min(3, appsThisWeek), done: appsThisWeek >= 3, xpReward: 50,
     },
     {
-      id: 'weekly_interview', icon: '🎙️', desc: 'Log at least 1 interview round',
-      target: 1, progress: Math.min(1, interviewCount > 0 ? 1 : 0), done: interviewCount > 0, xpReward: 30,
+      id: 'weekly_interview', icon: '🎙️', desc: 'Log at least 1 interview round this week',
+      target: 1, progress: Math.min(1, weeklyInterviewCount), done: weeklyInterviewCount >= 1, xpReward: 30,
     },
     {
-      id: 'weekly_research', icon: '🔬', desc: 'Write 2 research notes',
-      target: 2, progress: Math.min(2, noteCount), done: noteCount >= 2, xpReward: 25,
+      id: 'weekly_research', icon: '🔬', desc: 'Write 2 research notes this week',
+      target: 2, progress: Math.min(2, weeklyNoteCount), done: weeklyNoteCount >= 2, xpReward: 25,
     },
   ]
 
@@ -312,9 +321,9 @@ export function useGamification() {
   const unlockedCount = achievements.filter(a => a.unlocked).length
 
   const challenges = computeWeeklyChallenges(
-    apps.map(a => ({ created_at: a.created_at, stage: a.stage })),
-    counts.interviewCount,
-    counts.noteCount
+    apps,
+    counts.weeklyInterviewCount,
+    counts.weeklyNoteCount
   )
 
   return {

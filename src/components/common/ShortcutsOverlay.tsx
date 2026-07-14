@@ -53,7 +53,7 @@ export function ShortcutsOverlay({ open, onClose }: ShortcutsOverlayProps) {
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-sm font-semibold">Keyboard shortcuts</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onClose} aria-label="Close shortcuts" className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>

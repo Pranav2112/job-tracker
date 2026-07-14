@@ -32,7 +32,7 @@ export function useApplicationContacts(applicationId: string) {
         .select('contacts(*)')
         .eq('application_id', applicationId)
       if (error) throw error
-      return data.map((r: { contacts: unknown }) => r.contacts) as Contact[]
+      return data.map((r: { contacts: Contact }) => r.contacts)
     },
     enabled: !!user && !!applicationId,
   })

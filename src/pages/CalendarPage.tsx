@@ -31,8 +31,8 @@ function useAllInterviews() {
 
 export function CalendarPage() {
   const navigate = useNavigate()
-  const { data: applications = [], isLoading: appsLoading } = useApplications()
-  const { data: interviews = [], isLoading: intvLoading } = useAllInterviews()
+  const { data: applications = [], isLoading: appsLoading, isError: appsError } = useApplications()
+  const { data: interviews = [], isLoading: intvLoading, isError: intvError } = useAllInterviews()
 
   const events = useMemo<EventInput[]>(() => {
     const deadlineEvents = applications
@@ -66,6 +66,12 @@ export function CalendarPage() {
   if (appsLoading || intvLoading) return (
     <div className="h-full flex items-center justify-center">
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  )
+
+  if (appsError || intvError) return (
+    <div className="h-full flex items-center justify-center">
+      <p className="text-sm text-muted-foreground">Failed to load calendar data. Please refresh.</p>
     </div>
   )
 

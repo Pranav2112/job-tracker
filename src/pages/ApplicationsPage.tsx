@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StageBadge } from '@/components/common/StageBadge'
 import { PriorityBadge } from '@/components/common/PriorityBadge'
 import { useApplications, useUpdateApplication, useDeleteApplication } from '@/hooks/useApplications'
-import { formatDate, exportToCSV, needsAttention } from '@/lib/utils'
+import { formatDate, exportToCSV, needsAttention, isDeadlineSoon } from '@/lib/utils'
 import { PIPELINE_STAGES, STAGE_LABELS, APP_TYPE_LABELS } from '@/lib/constants'
 import { animateBarIn, animateListIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
@@ -62,7 +62,7 @@ export function ApplicationsPage() {
 
   useEffect(() => {
     if (selectedIds.length > 0) animateBarIn(bulkBarRef.current)
-  }, [selectedIds.length > 0])
+  }, [selectedIds.length])
 
   useEffect(() => {
     if (!isLoading && tableBodyRef.current) {
@@ -154,7 +154,7 @@ export function ApplicationsPage() {
       header: ({ column }) => <SortHeader label="Deadline" column={column} />,
       cell: ({ getValue }) => {
         const v = getValue<string | null>()
-        const soon = v && Math.ceil((new Date(v).getTime() - Date.now()) / 86400000) <= 7
+        const soon = isDeadlineSoon(v)
         return <span className={cn('text-xs whitespace-nowrap font-medium', soon ? 'text-amber-600' : 'text-muted-foreground')}>{formatDate(v)}</span>
       },
     },
@@ -270,7 +270,7 @@ export function ApplicationsPage() {
                   {app.deadline && (
                     <span className={cn(
                       'text-[11px] font-medium px-2 py-0.5 rounded-full',
-                      Math.ceil((new Date(app.deadline).getTime() - Date.now()) / 86400000) <= 7
+                      isDeadlineSoon(app.deadline)
                         ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
                         : 'text-muted-foreground bg-muted'
                     )}>

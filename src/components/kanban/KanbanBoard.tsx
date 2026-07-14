@@ -20,14 +20,14 @@ interface KanbanBoardProps {
 
 function fireConfetti(stage: PipelineStage) {
   if (stage === 'Accepted') {
-    const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#fbbf24', '#34d399', '#f472b6']
+    const colors = ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f472b6', '#a3e635']
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors })
     setTimeout(() => confetti({ particleCount: 60, angle: 60,  spread: 55, origin: { x: 0, y: 0.65 }, colors }), 250)
     setTimeout(() => confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors }), 400)
   } else if (stage === 'OfferReceived') {
-    confetti({ particleCount: 70, spread: 65, origin: { y: 0.65 }, colors: ['#6366f1', '#8b5cf6', '#fbbf24'] })
+    confetti({ particleCount: 70, spread: 65, origin: { y: 0.65 }, colors: ['#10b981', '#34d399', '#fbbf24'] })
   } else if (stage === 'RecruiterScreen' || stage === 'Interviewing') {
-    confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 }, scalar: 0.8, colors: ['#6366f1', '#a78bfa'] })
+    confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 }, scalar: 0.8, colors: ['#10b981', '#6ee7b7'] })
   }
 }
 
@@ -65,16 +65,21 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
     const draggedApp = applications.find(a => a.id === active.id)
     if (!draggedApp) return
 
-    const targetStage = (PIPELINE_STAGES.includes(over.id as PipelineStage)
-      ? over.id
-      : over.data.current?.app?.stage ?? over.data.current?.stage
-    ) as PipelineStage | undefined
+    const targetStage = (
+      PIPELINE_STAGES.includes(over.id as PipelineStage)
+        ? over.id as PipelineStage
+        : (over.data.current?.sortable?.containerId as PipelineStage | undefined)
+    )
 
     if (!targetStage || targetStage === draggedApp.stage) return
 
-    updateStage.mutate({ id: draggedApp.id, stage: targetStage, prevStage: draggedApp.stage })
-    fireConfetti(targetStage)
-    await updateStreak()
+    try {
+      await updateStage.mutateAsync({ id: draggedApp.id, stage: targetStage, prevStage: draggedApp.stage })
+      fireConfetti(targetStage)
+      await updateStreak()
+    } catch {
+      // Stage update failed — skip celebration
+    }
   }
 
   const byStage = (stage: PipelineStage) => applications.filter(a => a.stage === stage)

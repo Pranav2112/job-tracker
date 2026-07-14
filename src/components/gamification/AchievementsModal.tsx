@@ -38,22 +38,20 @@ export function AchievementsModal({ open, onClose, achievements, unlockedCount }
   const gridRef     = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-      requestAnimationFrame(() => {
-        if (backdropRef.current) gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2 })
-        if (panelRef.current)    gsap.fromTo(panelRef.current, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: 'power3.out' })
-        if (gridRef.current) {
-          gsap.fromTo(gridRef.current.children,
-            { opacity: 0, y: 16, scale: 0.92 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.35, stagger: 0.04, ease: 'back.out(1.4)', delay: 0.1 }
-          )
-        }
-      })
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(() => {
+      if (backdropRef.current) gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2 })
+      if (panelRef.current)    gsap.fromTo(panelRef.current, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: 'power3.out' })
+      if (gridRef.current) {
+        gsap.fromTo(gridRef.current.children,
+          { opacity: 0, y: 16, scale: 0.92 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.35, stagger: 0.04, ease: 'back.out(1.4)', delay: 0.1 }
+        )
+      }
+    })
+    return () => { document.body.style.overflow = prev }
   }, [open])
 
   useEffect(() => {
@@ -68,7 +66,7 @@ export function AchievementsModal({ open, onClose, achievements, unlockedCount }
   return (
     <div
       ref={backdropRef}
-      className="cmd-backdrop fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      className="cmd-backdrop fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
