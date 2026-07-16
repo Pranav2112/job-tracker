@@ -93,30 +93,36 @@ export function DashboardPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('this-week')
   const { challenges, seasonGoal, seasonProgress } = useGamification()
 
-  const stats = useMemo(() => {
+  const upcomingDeadlines = useMemo(() => {
     const today = startOfDay(new Date())
     const week = addDays(today, 7)
-    const active = applications.filter(a => !TERMINAL_STAGES.includes(a.stage))
-    const deadlines = applications.filter(a => a.deadline && isWithinInterval(parseISO(a.deadline), { start: today, end: week }))
-    const attention = applications.filter(a => needsAttention(a).flag)
-    return { total: applications.length, active: active.length, deadlines: deadlines.length, attention: attention.length }
+    return applications
+      .filter(a => a.deadline && isWithinInterval(parseISO(a.deadline), { start: today, end: week }))
+      .sort((a, b) => (a.deadline ?? '').localeCompare(b.deadline ?? ''))
+      .slice(0, 6)
   }, [applications])
+
+  const stats = useMemo(() => {
+    const active    = applications.filter(a => !TERMINAL_STAGES.includes(a.stage))
+    const attention = applications.filter(a => needsAttention(a).flag)
+    return { total: applications.length, active: active.length, deadlines: upcomingDeadlines.length, attention: attention.length }
+  }, [applications, upcomingDeadlines])
 
   const filtered = useMemo(() => {
     switch (filter) {
-      case 'priority-high': return applications.filter(a => a.priority === 'High')
-      case 'needs-attention': return applications.filter(a => needsAttention(a).flag)
-      case 'internship': return applications.filter(a => a.app_type === 'Internship')
-      case 'full-time': return applications.filter(a => a.app_type === 'FullTime')
-      default: return applications
+      case 'priority-high':    return applications.filter(a => a.priority === 'High')
+      case 'needs-attention':  return applications.filter(a => needsAttention(a).flag)
+      case 'internship':       return applications.filter(a => a.app_type === 'Internship')
+      case 'full-time':        return applications.filter(a => a.app_type === 'FullTime')
+      default:                 return applications
     }
   }, [applications, filter])
 
   const recentApps = useMemo(() => {
-    const now  = new Date()
-    const todayStart = startOfDay(now)
-    const weekStart  = startOfWeek(now, { weekStartsOn: 1 })
-    const weekEnd    = endOfWeek(now, { weekStartsOn: 1 })
+    const now           = new Date()
+    const todayStart    = startOfDay(now)
+    const weekStart     = startOfWeek(now, { weekStartsOn: 1 })
+    const weekEnd       = endOfWeek(now, { weekStartsOn: 1 })
     const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
     const lastWeekEnd   = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 })
 
@@ -138,15 +144,6 @@ export function DashboardPage() {
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .slice(0, 8)
   }, [applications, timeFilter])
-
-  const upcomingDeadlines = useMemo(() => {
-    const today = startOfDay(new Date())
-    const week = addDays(today, 7)
-    return applications
-      .filter(a => a.deadline && isWithinInterval(parseISO(a.deadline), { start: today, end: week }))
-      .sort((a, b) => (a.deadline ?? '').localeCompare(b.deadline ?? ''))
-      .slice(0, 6)
-  }, [applications])
 
   useEffect(() => {
     if (!isLoading) {

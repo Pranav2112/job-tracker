@@ -53,9 +53,9 @@ export function useNotifications(applications: Application[]) {
         }
       }
 
-      // Stale applications (not updated in 30+ days)
+      // Stale applications (not updated in 30+ days, not Applied — followup covers those)
       const daysSinceUpdate = differenceInDays(now, parseISO(app.updated_at))
-      if (daysSinceUpdate >= 30) {
+      if (daysSinceUpdate >= 30 && app.stage !== 'Applied') {
         notifs.push({
           id: `stale-${app.id}`,
           type: 'stale',
@@ -67,18 +67,15 @@ export function useNotifications(applications: Application[]) {
       }
 
       // Follow-up nudge: in Applied stage for 14+ days
-      if (app.stage === 'Applied') {
-        const daysSinceApplied = differenceInDays(now, parseISO(app.updated_at))
-        if (daysSinceApplied >= 14) {
-          notifs.push({
-            id: `followup-${app.id}`,
-            type: 'followup',
-            severity: 'normal',
-            title: 'Consider following up',
-            body: `${app.company_name} — applied ${daysSinceApplied} days ago`,
-            applicationId: app.id,
-          })
-        }
+      if (app.stage === 'Applied' && daysSinceUpdate >= 14) {
+        notifs.push({
+          id: `followup-${app.id}`,
+          type: 'followup',
+          severity: 'normal',
+          title: 'Consider following up',
+          body: `${app.company_name} — applied ${daysSinceUpdate} days ago`,
+          applicationId: app.id,
+        })
       }
     }
 

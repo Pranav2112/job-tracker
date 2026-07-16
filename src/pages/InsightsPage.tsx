@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { format, parseISO, startOfWeek, endOfWeek, subWeeks, isWithinInterval, differenceInDays } from 'date-fns'
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar,
@@ -6,10 +6,9 @@ import {
 } from 'recharts'
 import { Loader2, Target, TrendingUp, MessageSquare, Award, BarChart2 } from 'lucide-react'
 import { useApplications } from '@/hooks/useApplications'
-import { STAGE_LABELS, TERMINAL_STAGES } from '@/lib/constants'
+import { STAGE_LABELS } from '@/lib/constants'
 import { animateIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
-import { useEffect, useRef } from 'react'
 import type { PipelineStage } from '@/types'
 
 // ── KPI card ─────────────────────────────────────────────────────────────────

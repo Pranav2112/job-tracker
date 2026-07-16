@@ -38,22 +38,19 @@ async function fetchXPCounts(userId: string) {
   const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString()
   const weekEnd   = endOfWeek(now,   { weekStartsOn: 1 }).toISOString()
 
-  const [docs, interviews, notes, contacts, offers, weeklyInterviews, weeklyNotes] = await Promise.all([
+  const [docs, interviews, notes, contacts, weeklyInterviews, weeklyNotes] = await Promise.all([
     supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('interview_rounds').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('research_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('contacts').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-    supabase.from('offers').select('final_outcome').eq('user_id', userId),
     supabase.from('interview_rounds').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', weekStart).lte('created_at', weekEnd),
     supabase.from('research_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', weekStart).lte('created_at', weekEnd),
   ])
   return {
-    docCount:             docs.count           ?? 0,
-    interviewCount:       interviews.count      ?? 0,
-    noteCount:            notes.count           ?? 0,
-    contactCount:         contacts.count        ?? 0,
-    acceptedCount:        (offers.data ?? []).filter(o => o.final_outcome === 'Accepted').length,
-    offerCount:           (offers.data ?? []).length,
+    docCount:             docs.count            ?? 0,
+    interviewCount:       interviews.count       ?? 0,
+    noteCount:            notes.count            ?? 0,
+    contactCount:         contacts.count         ?? 0,
     weeklyInterviewCount: weeklyInterviews.count ?? 0,
     weeklyNoteCount:      weeklyNotes.count      ?? 0,
   }
@@ -255,7 +252,8 @@ export function useUpdateStreak() {
 
   return async function touch() {
     const current = query.data
-    const today   = new Date().toISOString().split('T')[0]
+    const _d = new Date()
+    const today = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`
 
     if (current) {
       const last = current.last_activity_date
@@ -285,7 +283,7 @@ export function useSetSeasonGoal() {
     await upsert.mutateAsync({
       current_streak: current?.current_streak ?? 1,
       longest_streak: current?.longest_streak ?? 1,
-      last_activity_date: current?.last_activity_date ?? new Date().toISOString().split('T')[0],
+      last_activity_date: current?.last_activity_date ?? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })(),
       season_goal: goal,
     })
   }
@@ -305,7 +303,8 @@ export function useGamification() {
   })
 
   const counts = countsQuery.data ?? {
-    docCount: 0, interviewCount: 0, noteCount: 0, contactCount: 0, acceptedCount: 0, offerCount: 0,
+    docCount: 0, interviewCount: 0, noteCount: 0, contactCount: 0,
+    weeklyInterviewCount: 0, weeklyNoteCount: 0,
   }
   const streak   = streakQuery.data?.current_streak   ?? 0
   const longest  = streakQuery.data?.longest_streak   ?? 0

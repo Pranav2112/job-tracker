@@ -15,10 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StageBadge } from '@/components/common/StageBadge'
 import { PriorityBadge } from '@/components/common/PriorityBadge'
 import { useApplications, useUpdateApplication, useDeleteApplication } from '@/hooks/useApplications'
-import { formatDate, exportToCSV, needsAttention, isDeadlineSoon } from '@/lib/utils'
+import { formatDate, exportToCSV, needsAttention, isDeadlineSoon, cn } from '@/lib/utils'
 import { PIPELINE_STAGES, STAGE_LABELS, APP_TYPE_LABELS } from '@/lib/constants'
 import { animateBarIn, animateListIn } from '@/lib/animations'
-import { cn } from '@/lib/utils'
 import type { Application, PipelineStage, AppType, PriorityLevel } from '@/types'
 
 function SortHeader({ label, column }: { label: string; column: { toggleSorting: () => void; getIsSorted: () => false | 'asc' | 'desc' } }) {

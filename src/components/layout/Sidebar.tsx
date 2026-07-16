@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, List, Calendar, Users, LogOut, Briefcase,
-  Search, Sun, Moon, Command, X, Trophy, Menu, Settings, BarChart2, Bell,
+  Search, Sun, Moon, Command, X, Trophy, Menu, BarChart2, Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -255,13 +255,6 @@ function NavContent({ onNav }: NavContentProps) {
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
-          </button>
-          <button
-            onClick={() => go('/profile')}
-            title="Settings"
-            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted shrink-0"
-          >
-            <Settings className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={handleSignOut}

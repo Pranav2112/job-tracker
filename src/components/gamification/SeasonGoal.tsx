@@ -21,7 +21,7 @@ export function SeasonGoal({ appCount, goal, progress }: SeasonGoalProps) {
 
   useEffect(() => {
     if (barRef.current) {
-      gsap.to(barRef.current, { scaleX: Math.min(1, progress / 100), duration: 1, ease: 'power3.out', transformOrigin: 'left', delay: 0.3 })
+      gsap.fromTo(barRef.current, { scaleX: 0 }, { scaleX: Math.min(1, progress / 100), duration: 1, ease: 'power3.out', transformOrigin: 'left', delay: 0.3 })
     }
   }, [progress])
 
@@ -83,7 +83,7 @@ export function SeasonGoal({ appCount, goal, progress }: SeasonGoalProps) {
                 ? 'gradient-primary'
                 : 'bg-primary/70'
             )}
-            style={{ width: `${Math.min(100, progress)}%` }}
+            style={{ width: '100%' }}
           />
           {/* Milestone ticks */}
           {milestones.map(m => {
