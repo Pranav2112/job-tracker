@@ -21,7 +21,6 @@ import { ContactsPage } from '@/pages/ContactsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { InsightsPage } from '@/pages/InsightsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { WelcomeModal } from '@/components/common/WelcomeModal'
 import { Loader2 } from 'lucide-react'
 
 const queryClient = new QueryClient({
