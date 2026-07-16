@@ -19,7 +19,9 @@ import { ApplicationDetailPage } from '@/pages/ApplicationDetailPage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { ContactsPage } from '@/pages/ContactsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { InsightsPage } from '@/pages/InsightsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { WelcomeModal } from '@/components/common/WelcomeModal'
 import { Loader2 } from 'lucide-react'
 
 const queryClient = new QueryClient({
@@ -60,6 +62,7 @@ function GlobalShortcuts({ onCmd }: { onCmd: () => void }) {
         case 'n': case 'N': e.preventDefault(); navigate('/applications/new'); break
         case 'k': case 'K': e.preventDefault(); navigate('/dashboard'); break
         case 'l': case 'L': e.preventDefault(); navigate('/applications'); break
+        case 'i': case 'I': e.preventDefault(); navigate('/insights'); break
         case 'c': case 'C': e.preventDefault(); navigate('/calendar'); break
         case 'u': case 'U': e.preventDefault(); navigate('/contacts'); break
         case '?': setShowShortcuts(true); break
@@ -90,6 +93,7 @@ function AppRoutes() {
           <Route path="/applications" element={<ApplicationsPage />} />
           <Route path="/applications/new" element={<NewApplicationPage />} />
           <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/profile" element={<ProfilePage />} />

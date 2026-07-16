@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, List, Calendar, Users, LogOut, Briefcase,
-  Search, Sun, Moon, Command, X, Trophy, Menu, Settings,
+  Search, Sun, Moon, Command, X, Trophy, Menu, Settings, BarChart2, Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -10,12 +10,15 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useApplications } from '@/hooks/useApplications'
 import { animateSidebarIn } from '@/lib/animations'
 import { useGamification } from '@/hooks/useGamification'
+import { useNotifications } from '@/hooks/useNotifications'
 import { AchievementsModal } from '@/components/gamification/AchievementsModal'
+import { NotificationPanel } from '@/components/common/NotificationPanel'
 import { useProfile } from '@/hooks/useProfile'
 
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard',    shortcut: 'K' },
   { to: '/applications', icon: List,            label: 'Applications', shortcut: 'L' },
+  { to: '/insights',     icon: BarChart2,       label: 'Insights',     shortcut: 'I' },
   { to: '/calendar',     icon: Calendar,        label: 'Calendar',     shortcut: 'C' },
   { to: '/contacts',     icon: Users,           label: 'Contacts',     shortcut: 'U' },
 ]
@@ -33,10 +36,12 @@ function NavContent({ onNav }: NavContentProps) {
   const { data: applications = [] } = useApplications()
   const { level, streak, achievements, unlockedCount } = useGamification()
   const { data: profile } = useProfile()
+  const { unread, unreadCount, dismiss, dismissAll } = useNotifications(applications)
 
-  const [searchOpen, setSearchOpen]       = useState(false)
-  const [searchQuery, setSearchQuery]     = useState('')
+  const [searchOpen, setSearchOpen]           = useState(false)
+  const [searchQuery, setSearchQuery]         = useState('')
   const [achievementsOpen, setAchievementsOpen] = useState(false)
+  const [notifOpen, setNotifOpen]             = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -240,6 +245,18 @@ function NavContent({ onNav }: NavContentProps) {
             <p className="flex-1 text-xs text-muted-foreground truncate group-hover:text-foreground transition-colors">{email}</p>
           </button>
           <button
+            onClick={() => setNotifOpen(o => !o)}
+            title="Notifications"
+            className="relative text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted shrink-0"
+          >
+            <Bell className="h-3.5 w-3.5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => go('/profile')}
             title="Settings"
             className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted shrink-0"
@@ -261,6 +278,14 @@ function NavContent({ onNav }: NavContentProps) {
         onClose={() => setAchievementsOpen(false)}
         achievements={achievements}
         unlockedCount={unlockedCount}
+      />
+
+      <NotificationPanel
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        notifications={unread}
+        onDismiss={dismiss}
+        onDismissAll={dismissAll}
       />
     </>
   )
@@ -313,6 +338,13 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
 
 // ── Bottom tab bar for mobile ─────────────────────────────────────────────────
 
+const BOTTOM_NAV_ITEMS = [
+  { to: '/dashboard',    icon: LayoutDashboard, label: 'Home' },
+  { to: '/applications', icon: List,            label: 'Apps' },
+  { to: '/insights',     icon: BarChart2,       label: 'Insights' },
+  { to: '/calendar',     icon: Calendar,        label: 'Calendar' },
+]
+
 interface BottomNavProps {
   onMenuOpen: () => void
 }
@@ -320,7 +352,7 @@ interface BottomNavProps {
 export function BottomNav({ onMenuOpen }: BottomNavProps) {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm z-40 flex safe-bottom">
-      {navItems.map(({ to, icon: Icon, label }) => (
+      {BOTTOM_NAV_ITEMS.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={to}
           to={to}

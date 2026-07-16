@@ -5,6 +5,8 @@ import { Header } from './Header'
 import { useAuth } from '@/contexts/AuthContext'
 import { useIdleTimer } from '@/hooks/useIdleTimer'
 import { IdleWarningModal } from '@/components/auth/IdleWarningModal'
+import { WelcomeModal } from '@/components/common/WelcomeModal'
+import { useApplications } from '@/hooks/useApplications'
 
 const WARN_AFTER_MS   = 15 * 60 * 1_000
 const LOGOUT_AFTER_MS = 20 * 60 * 1_000
@@ -13,6 +15,7 @@ const COUNTDOWN_SECS  = (LOGOUT_AFTER_MS - WARN_AFTER_MS) / 1_000
 export function AppLayout() {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
+  const { data: applications = [] } = useApplications()
   const [warnOpen,      setWarnOpen]      = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
@@ -65,6 +68,8 @@ export function AppLayout() {
         onStay={handleStay}
         onSignOut={handleSignOut}
       />
+
+      <WelcomeModal hasApplications={applications.length > 0} />
     </>
   )
 }

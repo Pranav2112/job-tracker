@@ -12,6 +12,7 @@ const shortcuts = [
   { keys: ['N'], label: 'New application' },
   { keys: ['K'], label: 'Go to Dashboard (Kanban)' },
   { keys: ['L'], label: 'Go to Applications (List)' },
+  { keys: ['I'], label: 'Go to Insights' },
   { keys: ['C'], label: 'Go to Calendar' },
   { keys: ['U'], label: 'Go to Contacts (Users)' },
   { keys: ['?'], label: 'Show this overlay' },
