@@ -16,8 +16,9 @@ import { cn } from '@/lib/utils'
 import type { Application } from '@/types'
 
 const BOARD_LABELS: Record<string, string> = {
-  Greenhouse: 'Greenhouse', Lever: 'Lever',
-  Ashby: 'Ashby', Workday: 'Workday', Web: 'the web',
+  Greenhouse: 'Greenhouse', Lever: 'Lever', Ashby: 'Ashby',
+  Workday: 'Workday', SmartRecruiters: 'SmartRecruiters', Workable: 'Workable',
+  Web: 'the web',
 }
 
 export function NewApplicationPage() {
@@ -60,6 +61,7 @@ export function NewApplicationPage() {
         salary_info:   result.salary_info   ?? '',
         posting_url:   result.posting_url   ?? '',
         source:        result.source        ?? '',
+        deadline:      result.deadline      ?? '',
       })
       const hasFields = [result.role_title, result.company_name, result.location, result.remote_type, result.salary_info].some(Boolean)
       if (!hasFields) {
@@ -69,6 +71,7 @@ export function NewApplicationPage() {
       toast.success(found ? `Found: ${found}` : 'URL saved — fill in any missing fields')
     } catch (err: unknown) {
       setScrapeErr(err instanceof Error ? err.message : 'Could not read that URL. Try pasting the job description below instead.')
+      setJdOpen(true)
     }
   }
 
@@ -86,6 +89,7 @@ export function NewApplicationPage() {
         remote_type:  parsed.remote_type  ?? undefined,
         salary_info:  parsed.salary_info  ?? '',
         app_type:     parsed.app_type     ?? 'Internship',
+        deadline:     parsed.deadline     ?? '',
       })
       setJdParsing(false)
       setJdOpen(false)
@@ -151,7 +155,7 @@ export function NewApplicationPage() {
           </div>
           <p className="text-sm font-semibold">Auto-fill from URL</p>
           <span className="ml-auto text-[11px] text-muted-foreground px-2 py-0.5 rounded-full bg-muted">
-            Greenhouse · Lever · Ashby
+            Greenhouse · Lever · Ashby · Workday · SmartRecruiters · Workable
           </span>
         </div>
 
