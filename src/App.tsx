@@ -1,7 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Component } from 'react'
+import type { ReactNode, ErrorInfo } from 'react'
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  componentDidCatch(_e: Error, info: ErrorInfo) { console.error('AppError:', info) }
+  render() {
+    if (this.state.error) {
+      const msg = (this.state.error as Error).message
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif', padding: '2rem', textAlign: 'center' }}>
+          <div>
+            <p style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️</p>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Something went wrong</p>
+            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1.5rem', maxWidth: 400 }}>{msg}</p>
+            <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1.5rem', borderRadius: 8, border: '1px solid #ccc', cursor: 'pointer' }}>
+              Reload
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -105,17 +130,19 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <TooltipProvider>
-              <AppRoutes />
-              <Toaster position="bottom-right" richColors />
-            </TooltipProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <TooltipProvider>
+                <AppRoutes />
+                <Toaster position="bottom-right" richColors />
+              </TooltipProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
