@@ -48,6 +48,8 @@ export const APP_TYPE_LABELS: Record<AppType, string> = {
   Internship: 'Internship',
   FullTime: 'Full-Time',
   CoOp: 'Co-op',
+  PartTime: 'Part-Time',
+  Contract: 'Contract',
 }
 
 export const REMOTE_TYPE_LABELS: Record<RemoteType, string> = {

@@ -13,7 +13,7 @@ import type { Application, PipelineStage } from '@/types'
 const schema = z.object({
   company_name: z.string().min(1, 'Company name is required'),
   role_title: z.string().min(1, 'Role title is required'),
-  app_type: z.enum(['Internship', 'FullTime', 'CoOp'] as const),
+  app_type: z.enum(['Internship', 'FullTime', 'CoOp', 'PartTime', 'Contract'] as const),
   location: z.string().optional(),
   remote_type: z.enum(['Remote', 'Hybrid', 'Onsite', ''] as const).optional(),
   posting_url: z.string().url('Enter a valid URL (https://…)').optional().or(z.literal('')),
@@ -140,6 +140,8 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
                 <SelectItem value="Internship">🎓 Internship</SelectItem>
                 <SelectItem value="FullTime">💼 Full-Time</SelectItem>
                 <SelectItem value="CoOp">🔄 Co-op</SelectItem>
+                <SelectItem value="PartTime">⏱ Part-Time</SelectItem>
+                <SelectItem value="Contract">📋 Contract</SelectItem>
               </SelectContent>
             </Select>
           </div>

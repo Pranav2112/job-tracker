@@ -1,4 +1,4 @@
-export type AppType = 'Internship' | 'FullTime' | 'CoOp'
+export type AppType = 'Internship' | 'FullTime' | 'CoOp' | 'PartTime' | 'Contract'
 export type RemoteType = 'Remote' | 'Hybrid' | 'Onsite'
 export type PipelineStage =
   | 'Researching' | 'Preparing' | 'Applied' | 'ReferralRequested'
