@@ -2,16 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, List, Calendar, Users, LogOut, Briefcase,
-  Search, Sun, Moon, Command, X, Trophy, Menu, BarChart2, Bell,
+  Search, Sun, Moon, Command, X, Menu, BarChart2, Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useApplications } from '@/hooks/useApplications'
 import { animateSidebarIn } from '@/lib/animations'
-import { useGamification } from '@/hooks/useGamification'
 import { useNotifications } from '@/hooks/useNotifications'
-import { AchievementsModal } from '@/components/gamification/AchievementsModal'
 import { NotificationPanel } from '@/components/common/NotificationPanel'
 import { useProfile } from '@/hooks/useProfile'
 
@@ -34,14 +32,12 @@ function NavContent({ onNav }: NavContentProps) {
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const { data: applications = [] } = useApplications()
-  const { level, streak, achievements, unlockedCount } = useGamification()
   const { data: profile } = useProfile()
   const { unread, unreadCount, dismiss, dismissAll } = useNotifications(applications)
 
-  const [searchOpen, setSearchOpen]           = useState(false)
-  const [searchQuery, setSearchQuery]         = useState('')
-  const [achievementsOpen, setAchievementsOpen] = useState(false)
-  const [notifOpen, setNotifOpen]             = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [notifOpen, setNotifOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -82,34 +78,6 @@ function NavContent({ onNav }: NavContentProps) {
         <div className="leading-tight flex-1 min-w-0">
           <p className="text-sm font-bold tracking-tight">AppTracker</p>
           <p className="text-[10px] text-muted-foreground font-medium">Summer 2027</p>
-        </div>
-      </div>
-
-      {/* XP / Level bar */}
-      <div className="px-3 pt-3 pb-1 shrink-0">
-        <div className="rounded-xl border bg-card/50 px-3 py-2.5 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm">⚡</span>
-              <span className="text-xs font-semibold text-foreground">{level.title}</span>
-              <span className="text-[10px] text-muted-foreground ml-0.5">Lv.{level.level}</span>
-            </div>
-            {streak > 0 && (
-              <span className="text-[11px] font-bold flex items-center gap-0.5">
-                🔥<span className="text-orange-400">{streak}</span>
-              </span>
-            )}
-          </div>
-          <div className="relative h-1 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full gradient-primary transition-all duration-700"
-              style={{ width: `${level.progress}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>{level.xp} XP</span>
-            <span>{level.progress}% → {level.next?.title ?? 'MAX'}</span>
-          </div>
         </div>
       </div>
 
@@ -202,19 +170,6 @@ function NavContent({ onNav }: NavContentProps) {
           </NavLink>
         ))}
 
-        {/* Achievements */}
-        <button
-          onClick={() => setAchievementsOpen(true)}
-          className="group w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-all duration-150"
-        >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted/60 group-hover:bg-muted transition-all">
-            <Trophy className="h-3.5 w-3.5" />
-          </div>
-          <span className="flex-1 text-left">Achievements</span>
-          <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-            {unlockedCount}
-          </span>
-        </button>
       </nav>
 
       {/* Footer */}
@@ -265,13 +220,6 @@ function NavContent({ onNav }: NavContentProps) {
           </button>
         </div>
       </div>
-
-      <AchievementsModal
-        open={achievementsOpen}
-        onClose={() => setAchievementsOpen(false)}
-        achievements={achievements}
-        unlockedCount={unlockedCount}
-      />
 
       <NotificationPanel
         open={notifOpen}

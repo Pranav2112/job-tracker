@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ApplicationForm } from '@/components/forms/ApplicationForm'
 import { useCreateApplication } from '@/hooks/useApplications'
-import { useUpdateStreak } from '@/hooks/useGamification'
 import { useScrapeJob, type ScrapedJob } from '@/hooks/useScrapeJob'
 import { parseJobDescription } from '@/lib/parseJD'
 import { toast } from 'sonner'
@@ -23,9 +22,8 @@ const BOARD_LABELS: Record<string, string> = {
 
 export function NewApplicationPage() {
   const navigate    = useNavigate()
-  const create      = useCreateApplication()
-  const touchStreak = useUpdateStreak()
-  const scrape      = useScrapeJob()
+  const create  = useCreateApplication()
+  const scrape  = useScrapeJob()
 
   // URL scraper state
   const [urlInput,  setUrlInput]  = useState('')
@@ -118,7 +116,6 @@ export function NewApplicationPage() {
   async function handleSubmit(values: Omit<Application, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
     const app = await create.mutateAsync(values)
     toast.success(`${values.company_name} added!`)
-    void touchStreak()
     navigate(`/applications/${app.id}`)
   }
 

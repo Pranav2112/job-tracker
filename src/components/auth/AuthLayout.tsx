@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
-import { Briefcase, LayoutDashboard, Trophy, Zap } from 'lucide-react'
+import { Briefcase, LayoutDashboard, BarChart2, Zap } from 'lucide-react'
 import { gsap } from 'gsap'
 
 const features = [
   { icon: LayoutDashboard, text: 'Visual Kanban pipeline for every stage' },
   { icon: Zap,             text: 'Completeness scores & next-action prompts' },
-  { icon: Trophy,          text: 'XP system, streaks & achievement badges' },
+  { icon: BarChart2,       text: 'Insights & analytics for your pipeline' },
 ]
 
 interface AuthLayoutProps {

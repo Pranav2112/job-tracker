@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { X, Sparkles, LayoutDashboard, Trophy } from 'lucide-react'
+import { X, Sparkles, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -17,13 +17,7 @@ const STEPS = [
     icon: LayoutDashboard,
     color: 'bg-sky-500/10 text-sky-500',
     title: 'Track your pipeline',
-    desc: 'Drag cards across the Kanban board as you progress from Applied → Interview → Offer. Your streak builds as you stay consistent.',
-  },
-  {
-    icon: Trophy,
-    color: 'bg-amber-500/10 text-amber-500',
-    title: 'Earn XP & achievements',
-    desc: 'Every application, interview, and note earns you XP. Level up, complete weekly challenges, and celebrate wins with confetti.',
+    desc: 'Drag cards across the Kanban board as you progress from Applied → Interview → Offer. Set deadlines and never miss a follow-up.',
   },
 ]
 

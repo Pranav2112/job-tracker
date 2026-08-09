@@ -9,9 +9,6 @@ import { needsAttention, formatDate, cn } from '@/lib/utils'
 import { TERMINAL_STAGES } from '@/lib/constants'
 import { StageBadge } from '@/components/common/StageBadge'
 import { animateCounter, animateListIn, animateIn } from '@/lib/animations'
-import { useGamification } from '@/hooks/useGamification'
-import { SeasonGoal } from '@/components/gamification/SeasonGoal'
-import { WeeklyChallenges } from '@/components/gamification/WeeklyChallenges'
 import type { Application } from '@/types'
 
 interface StatCardProps {
@@ -91,8 +88,6 @@ export function DashboardPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const headerRef = useRef<HTMLDivElement>(null)
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('this-week')
-  const { challenges, seasonGoal, seasonProgress } = useGamification()
-
   const upcomingDeadlines = useMemo(() => {
     const today = startOfDay(new Date())
     const week = addDays(today, 7)
@@ -415,12 +410,6 @@ export function DashboardPage() {
               </div>
             )}
           </div>
-
-          {/* Season Goal */}
-          <SeasonGoal appCount={applications.length} goal={seasonGoal} progress={seasonProgress} />
-
-          {/* Weekly Challenges */}
-          <WeeklyChallenges challenges={challenges} />
 
           {/* Deadlines */}
           {upcomingDeadlines.length > 0 && (

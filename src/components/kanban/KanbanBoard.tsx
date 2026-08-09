@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import confetti from 'canvas-confetti'
 import {
   DndContext, DragOverlay, closestCenter,
   KeyboardSensor, PointerSensor, useSensor, useSensors,
@@ -11,30 +10,15 @@ import { KanbanCard } from './KanbanCard'
 import { PIPELINE_STAGES } from '@/lib/constants'
 import { useUpdateStage } from '@/hooks/useApplications'
 import { useUpcomingInterviews } from '@/hooks/useDetailData'
-import { useUpdateStreak } from '@/hooks/useGamification'
 import type { Application, PipelineStage } from '@/types'
 
 interface KanbanBoardProps {
   applications: Application[]
 }
 
-function fireConfetti(stage: PipelineStage) {
-  if (stage === 'Accepted') {
-    const colors = ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f472b6', '#a3e635']
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors })
-    setTimeout(() => confetti({ particleCount: 60, angle: 60,  spread: 55, origin: { x: 0, y: 0.65 }, colors }), 250)
-    setTimeout(() => confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors }), 400)
-  } else if (stage === 'OfferReceived') {
-    confetti({ particleCount: 70, spread: 65, origin: { y: 0.65 }, colors: ['#10b981', '#34d399', '#fbbf24'] })
-  } else if (stage === 'RecruiterScreen' || stage === 'Interviewing') {
-    confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 }, scalar: 0.8, colors: ['#10b981', '#6ee7b7'] })
-  }
-}
-
 export function KanbanBoard({ applications }: KanbanBoardProps) {
   const [activeApp, setActiveApp] = useState<Application | null>(null)
-  const updateStage   = useUpdateStage()
-  const updateStreak  = useUpdateStreak()
+  const updateStage = useUpdateStage()
   const { data: upcomingInterviews = [] } = useUpcomingInterviews()
 
   const interviewMap = useMemo(() => {
@@ -75,10 +59,8 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
 
     try {
       await updateStage.mutateAsync({ id: draggedApp.id, stage: targetStage, prevStage: draggedApp.stage })
-      fireConfetti(targetStage)
-      await updateStreak()
     } catch {
-      // Stage update failed — skip celebration
+      // Stage update failed
     }
   }
 
