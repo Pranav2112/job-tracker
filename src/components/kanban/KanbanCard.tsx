@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useNavigate } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { cn, formatDate, needsAttention } from '@/lib/utils'
 import { PRIORITY_COLORS } from '@/lib/constants'
 import { computeBasicScore, scoreColor } from '@/lib/completeness'
 import { hoverLift, hoverDrop } from '@/lib/animations'
+import { useUpdateStage } from '@/hooks/useApplications'
 import type { Application } from '@/types'
 
 interface KanbanCardProps {
@@ -40,6 +41,17 @@ function CompletenessRing({ score }: { score: number }) {
 export function KanbanCard({ app, nextInterview }: KanbanCardProps) {
   const navigate = useNavigate()
   const cardRef = useRef<HTMLDivElement>(null)
+  const updateStage = useUpdateStage()
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    if (!ctxMenu) return
+    function close() { setCtxMenu(null) }
+    window.addEventListener('click', close)
+    window.addEventListener('contextmenu', close)
+    return () => { window.removeEventListener('click', close); window.removeEventListener('contextmenu', close) }
+  }, [ctxMenu])
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: app.id,
     data: { type: 'card', app },
@@ -65,7 +77,13 @@ export function KanbanCard({ app, nextInterview }: KanbanCardProps) {
     ;(cardRef as React.MutableRefObject<HTMLDivElement | null>).current = node
   }
 
+  async function markAs(stage: 'Ghosted' | 'Withdrawn') {
+    setCtxMenu(null)
+    await updateStage.mutateAsync({ id: app.id, stage, prevStage: app.stage, existingDateApplied: app.date_applied })
+  }
+
   return (
+    <>
     <div
       ref={combinedRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
@@ -77,6 +95,7 @@ export function KanbanCard({ app, nextInterview }: KanbanCardProps) {
       )}
       onMouseEnter={() => !isDragging && hoverLift(cardRef.current)}
       onMouseLeave={() => hoverDrop(cardRef.current)}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY }) }}
       {...attributes}
       {...listeners}
       onClick={() => navigate(`/applications/${app.id}`)}
@@ -144,5 +163,28 @@ export function KanbanCard({ app, nextInterview }: KanbanCardProps) {
         </div>
       </div>
     </div>
+
+    {ctxMenu && (
+      <div
+        className="fixed z-[200] min-w-[160px] rounded-lg border bg-popover shadow-lg py-1 text-sm"
+        style={{ top: ctxMenu.y, left: ctxMenu.x }}
+        onClick={e => e.stopPropagation()}
+      >
+        <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{app.company_name}</p>
+        <button
+          className="w-full text-left px-3 py-1.5 hover:bg-muted/60 transition-colors"
+          onClick={() => markAs('Ghosted')}
+        >
+          👻 Mark as Ghosted
+        </button>
+        <button
+          className="w-full text-left px-3 py-1.5 hover:bg-muted/60 transition-colors"
+          onClick={() => markAs('Withdrawn')}
+        >
+          🚪 Mark as Withdrawn
+        </button>
+      </div>
+    )}
+    </>
   )
 }

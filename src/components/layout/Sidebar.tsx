@@ -13,6 +13,13 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { NotificationPanel } from '@/components/common/NotificationPanel'
 import { useProfile } from '@/hooks/useProfile'
 
+function currentSeason() {
+  const m = new Date().getMonth()
+  const y = new Date().getFullYear()
+  const s = m < 3 ? 'Winter' : m < 6 ? 'Spring' : m < 9 ? 'Summer' : 'Fall'
+  return `${s} ${y}`
+}
+
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard',    shortcut: 'K' },
   { to: '/applications', icon: List,            label: 'Applications', shortcut: 'L' },
@@ -77,7 +84,7 @@ function NavContent({ onNav }: NavContentProps) {
         </div>
         <div className="leading-tight flex-1 min-w-0">
           <p className="text-sm font-bold tracking-tight">AppTracker</p>
-          <p className="text-[10px] text-muted-foreground font-medium">Summer 2027</p>
+          <p className="text-[10px] text-muted-foreground font-medium">{currentSeason()}</p>
         </div>
       </div>
 

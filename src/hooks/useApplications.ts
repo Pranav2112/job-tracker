@@ -101,10 +101,14 @@ export function useUpdateStage() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async ({ id, stage, prevStage }: { id: string; stage: PipelineStage; prevStage: PipelineStage }) => {
+    mutationFn: async ({ id, stage, prevStage, existingDateApplied }: { id: string; stage: PipelineStage; prevStage: PipelineStage; existingDateApplied?: string | null }) => {
+      const updatePayload: Record<string, unknown> = { stage }
+      if (stage === 'Applied' && !existingDateApplied) {
+        updatePayload.date_applied = new Date().toISOString().split('T')[0]
+      }
       const { error } = await supabase
         .from('applications')
-        .update({ stage })
+        .update(updatePayload)
         .eq('id', id)
         .eq('user_id', user!.id)
       if (error) throw error

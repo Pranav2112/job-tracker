@@ -58,7 +58,7 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
     if (!targetStage || targetStage === draggedApp.stage) return
 
     try {
-      await updateStage.mutateAsync({ id: draggedApp.id, stage: targetStage, prevStage: draggedApp.stage })
+      await updateStage.mutateAsync({ id: draggedApp.id, stage: targetStage, prevStage: draggedApp.stage, existingDateApplied: draggedApp.date_applied })
     } catch {
       // Stage update failed
     }

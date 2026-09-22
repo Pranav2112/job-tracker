@@ -2,6 +2,13 @@ import { useEffect, useRef } from 'react'
 import { Briefcase, LayoutDashboard, BarChart2, Zap } from 'lucide-react'
 import { gsap } from 'gsap'
 
+function currentSeason() {
+  const m = new Date().getMonth()
+  const y = new Date().getFullYear()
+  const s = m < 3 ? 'Winter' : m < 6 ? 'Spring' : m < 9 ? 'Summer' : 'Fall'
+  return `${s} ${y}`
+}
+
 const features = [
   { icon: LayoutDashboard, text: 'Visual Kanban pipeline for every stage' },
   { icon: Zap,             text: 'Completeness scores & next-action prompts' },
@@ -58,7 +65,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           </div>
           <div>
             <p className="font-bold text-lg leading-none text-white">AppTracker</p>
-            <p className="text-xs text-white/40 font-medium mt-0.5">Summer 2027</p>
+            <p className="text-xs text-white/40 font-medium mt-0.5">{currentSeason()}</p>
           </div>
         </div>
 
