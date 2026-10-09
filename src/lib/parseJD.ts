@@ -9,6 +9,7 @@ export interface ParsedJD {
   salary_info:  string | null
   app_type:     'Internship' | 'FullTime' | 'PartTime' | 'Contract' | 'CoOp' | null
   deadline:     string | null
+  notes:        string | null
 }
 
 export function parseJobDescription(raw: string): ParsedJD {
@@ -16,20 +17,70 @@ export function parseJobDescription(raw: string): ParsedJD {
   const lower = text.toLowerCase()
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
 
+  const role_title   = extractTitle(text, lines)
+  const company_name = extractCompany(text, lines, role_title)
+
   return {
-    company_name: extractCompany(text, lines),
-    role_title:   extractTitle(text, lines),
-    location:     extractLocation(text),
-    remote_type:  extractRemote(lower),
-    salary_info:  extractSalary(text),
-    app_type:     extractJobType(lower),
-    deadline:     extractDeadline(text),
+    company_name,
+    role_title,
+    location:    extractLocation(text),
+    remote_type: extractRemote(lower),
+    salary_info: extractSalary(text),
+    app_type:    extractJobType(lower),
+    deadline:    extractDeadline(text),
+    notes:       extractNotes(text, role_title, company_name),
   }
+}
+
+// ─── Job Title ────────────────────────────────────────────────────────────────
+
+function extractTitle(text: string, lines: string[]): string | null {
+  // Explicit label: "Job Title: …", "Position: …", "Role: …"
+  const labeled = text.match(
+    /(?:^|\n)\s*(?:job\s*title|position|role|title)\s*[:\-]\s*([^\n|•·]+)/im
+  )
+  if (labeled) return clean(labeled[1])
+
+  // Markdown heading "# Software Engineer"
+  const mdH1 = text.match(/^#+\s+(.+)$/m)
+  if (mdH1) return clean(mdH1[1])
+
+  // ALL CAPS first line (common in copied PDFs/emails): "SOFTWARE ENGINEER INTERN"
+  if (lines.length > 0 && /^[A-Z\s\-()\/]{4,80}$/.test(lines[0]) && !TITLE_SKIP.test(lines[0].toLowerCase())) {
+    return titleCase(lines[0])
+  }
+
+  // Look for title-shaped lines: contains role keywords
+  const titleKeywords = /\b(engineer|developer|analyst|manager|designer|scientist|intern|associate|director|coordinator|specialist|consultant|architect|lead|head of|vp of|product|software|data|machine learning|frontend|backend|fullstack|devops|sre|marketing|sales|recruiter|operations)\b/i
+  for (const line of lines.slice(0, 8)) {
+    if (
+      line.length > 3 && line.length < 100 &&
+      /^[A-Z]/.test(line) &&
+      titleKeywords.test(line) &&
+      !TITLE_SKIP.test(line.toLowerCase())
+    ) {
+      return clean(line)
+    }
+  }
+
+  // First non-trivial capitalised line that doesn't look like company boilerplate
+  for (const line of lines.slice(0, 5)) {
+    if (
+      line.length > 3 && line.length < 100 &&
+      /^[A-Z]/.test(line) &&
+      !TITLE_SKIP.test(line.toLowerCase()) &&
+      !COMPANY_SKIP.test(line.toLowerCase())
+    ) {
+      return clean(line)
+    }
+  }
+
+  return null
 }
 
 // ─── Company ──────────────────────────────────────────────────────────────────
 
-function extractCompany(text: string, lines: string[]): string | null {
+function extractCompany(text: string, lines: string[], knownTitle: string | null): string | null {
   // Explicit label: "Company: Stripe", "Employer: Google"
   const labeled = text.match(
     /(?:^|\n)\s*(?:company|employer|organization|client|firm)\s*[:\-]\s*([^\n|,•·]+)/im
@@ -42,7 +93,7 @@ function extractCompany(text: string, lines: string[]): string | null {
   )
   if (about) {
     const val = clean(about[1])
-    if (!COMPANY_SKIP.test(val.toLowerCase())) return val
+    if (!COMPANY_SKIP.test(val.toLowerCase()) && val !== knownTitle) return val
   }
 
   // LinkedIn bullet: "Company Name · Location · X followers"
@@ -73,19 +124,25 @@ function extractCompany(text: string, lines: string[]): string | null {
   if (posted) return clean(posted[1])
 
   // All-caps company name on its own line (e.g. "STRIPE\n" or "JANE STREET\n")
+  // Skip if it matches the known title
   for (const line of lines.slice(0, 8)) {
     if (/^[A-Z][A-Z\s&]{2,35}$/.test(line) && line.split(' ').length <= 5) {
-      return titleCase(line)
+      const candidate = titleCase(line)
+      if (candidate !== knownTitle) return candidate
     }
   }
 
-  // Fallback: second or third short capitalised line that doesn't look like a title
-  for (const line of lines.slice(1, 6)) {
+  // Fallback: find a short capitalised line that doesn't look like a title or boilerplate
+  // Skip lines that look like the known role title or contain role keywords
+  const titleKeywords = /\b(engineer|developer|analyst|manager|designer|scientist|intern|associate|director|specialist|consultant|architect|product|software|data|fullstack|frontend|backend)\b/i
+  for (const line of lines.slice(1, 10)) {
     if (
       line.length > 2 && line.length < 60 &&
       /^[A-Z]/.test(line) &&
+      !titleKeywords.test(line) &&
       !TITLE_SKIP.test(line.toLowerCase()) &&
-      !COMPANY_SKIP.test(line.toLowerCase())
+      !COMPANY_SKIP.test(line.toLowerCase()) &&
+      line !== knownTitle
     ) {
       return clean(line)
     }
@@ -94,36 +151,52 @@ function extractCompany(text: string, lines: string[]): string | null {
   return null
 }
 
-// ─── Job Title ────────────────────────────────────────────────────────────────
+// ─── Auto-notes ───────────────────────────────────────────────────────────────
 
-function extractTitle(text: string, lines: string[]): string | null {
-  // Explicit label: "Job Title: …", "Position: …", "Role: …"
-  const labeled = text.match(
-    /(?:^|\n)\s*(?:job\s*title|position|role|title)\s*[:\-]\s*([^\n|•·]+)/im
-  )
-  if (labeled) return clean(labeled[1])
+function extractNotes(text: string, title: string | null, company: string | null): string | null {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
 
-  // Markdown heading "# Software Engineer"
-  const mdH1 = text.match(/^#+\s+(.+)$/m)
-  if (mdH1) return clean(mdH1[1])
+  // Try to find a summary-like paragraph: first paragraph with 40+ chars that's not a header
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 60)
+  let summary = ''
 
-  // ALL CAPS first line (common in copied PDFs/emails): "SOFTWARE ENGINEER INTERN"
-  if (lines.length > 0 && /^[A-Z\s\-()\/]{4,80}$/.test(lines[0]) && !TITLE_SKIP.test(lines[0].toLowerCase())) {
-    return titleCase(lines[0])
+  for (const para of paragraphs) {
+    const paraLower = para.toLowerCase()
+    // Skip sections that are just bullet-point lists or header-only paragraphs
+    const isNarrativeParagraph = /[a-z]{3,}/.test(para) && para.split('\n').length <= 6
+    const isBoilerplate = /^(responsibilities|requirements|qualifications|what you|what we|who you|benefits|perks|about the role)/i.test(para.trim())
+    if (isNarrativeParagraph && !isBoilerplate) {
+      // Pick the first sentence of this paragraph
+      const firstSentence = para.match(/^([^.!?\n]{20,200}[.!?])/)
+      if (firstSentence) {
+        summary = firstSentence[1].trim()
+        break
+      }
+      // Or just the first line if no sentence end
+      const firstLine = para.split('\n')[0]
+      if (firstLine.length > 40) {
+        summary = firstLine.trim()
+        break
+      }
+    }
+    void paraLower
   }
 
-  // First non-trivial line that looks like a title
-  for (const line of lines.slice(0, 5)) {
-    if (
-      line.length > 3 && line.length < 120 &&
-      /^[A-Z]/.test(line) &&
-      !TITLE_SKIP.test(line.toLowerCase())
-    ) {
-      return clean(line)
+  if (!summary && lines.length > 0) {
+    // Last resort: find a line after title/company that reads like a description
+    for (const line of lines.slice(2, 12)) {
+      if (line.length > 50 && !/^(company|location|role|title|remote|salary|compensation|apply|deadline)/i.test(line)) {
+        summary = line
+        break
+      }
     }
   }
 
-  return null
+  if (!summary) return null
+
+  // Prepend role + company context if we have it
+  const context = [title, company ? `@ ${company}` : null].filter(Boolean).join(' ')
+  return context ? `${context} — ${summary}` : summary
 }
 
 // ─── Location ─────────────────────────────────────────────────────────────────
@@ -135,7 +208,6 @@ function extractLocation(text: string): string | null {
   )
   if (labeled) {
     const v = clean(labeled[1])
-    // Don't return if it's just "Remote" / "Hybrid" — that's handled by remote_type
     if (!/^(remote|hybrid|onsite|on-site|virtual)$/i.test(v)) return v
   }
 
@@ -189,7 +261,7 @@ function extractRemote(lower: string): 'Remote' | 'Hybrid' | 'Onsite' | null {
 // ─── Salary ───────────────────────────────────────────────────────────────────
 
 function extractSalary(text: string): string | null {
-  // Currency range with optional period: "$120,000 – $180,000/yr", "$120K–$180K", "£70K"
+  // Currency range with optional period: "$120,000 – $180,000/yr", "$120K–$180K"
   const range = text.match(
     /(?:\$|£|€|₹|USD|CAD|GBP|AUD|INR)\s?[\d,]+(?:[kK]|,000)?(?:\s*(?:to|[-–])\s*(?:\$|£|€|₹)?\s?[\d,]+(?:[kK]|,000)?)?(?:\s*(?:per\s+(?:year|hour|month|week)|annually|\/yr|\/hr|\/year|\/hour|\/mo|a year|p\.?a\.?))?/i
   )
@@ -211,7 +283,6 @@ function extractSalary(text: string): string | null {
   )
   if (stipend) return stipend[0].trim()
 
-  // "competitive compensation" / "competitive salary" — mark as a hint
   if (/competitive\s+(?:compensation|salary|pay)/i.test(text)) return 'Competitive'
 
   return null
@@ -220,7 +291,6 @@ function extractSalary(text: string): string | null {
 // ─── Application deadline ─────────────────────────────────────────────────────
 
 function extractDeadline(text: string): string | null {
-  // "Application deadline: March 15, 2025" / "Apply by: 2025-03-15" / "Closing date: 15/03/2025"
   const pattern = text.match(
     /(?:application|apply(?:ing)?|submission|deadline|closing|close[sd]?|due|open until|priority deadline)\s*(?:date|by|deadline)?\s*[:\-]?\s*([A-Za-z]+ \d{1,2},?\s*\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}|[A-Za-z]+ \d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)/im
   )
@@ -231,7 +301,7 @@ function extractDeadline(text: string): string | null {
     const d = new Date(raw)
     if (!isNaN(d.getTime())) return d.toISOString().split('T')[0]
   } catch { /* ignore */ }
-  return raw  // return human-readable if we can't convert
+  return raw
 }
 
 // ─── Job type ─────────────────────────────────────────────────────────────────
@@ -247,10 +317,8 @@ function extractJobType(lower: string): 'Internship' | 'FullTime' | 'PartTime' |
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Lines that start with these words are almost never a job title
 const TITLE_SKIP = /^(about|we |the |our |this |you |join |if |at |what |why |how |a |an |is |are |in |it |with |for |and |but |or |to |from |by |be |as |please |note |important |must |apply |responsibilities|requirements|qualifications|benefits|perks|who |when |where |here |now |read )/
 
-// Phrases that are not a company name
 const COMPANY_SKIP = /^(the role|what you|who you|what we|who we|about the|about this|about you|about us|your role|your responsibilities|key responsibilities|job description|position overview|overview|summary|description|requirements|qualifications|responsibilities|benefits|why join|why work|life at|working at)/
 
 function titleCase(str: string): string {

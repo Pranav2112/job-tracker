@@ -41,7 +41,6 @@ export interface Application {
   priority: PriorityLevel
   salary_info: string | null
   notes: string | null
-  date_discovered: string | null
   date_applied: string | null
   deadline: string | null
   created_at: string

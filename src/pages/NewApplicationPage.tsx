@@ -88,6 +88,7 @@ export function NewApplicationPage() {
         salary_info:  parsed.salary_info  ?? '',
         app_type:     parsed.app_type     ?? 'Internship',
         deadline:     parsed.deadline     ?? '',
+        notes:        parsed.notes        ?? '',
       })
       setJdParsing(false)
       setJdOpen(false)
@@ -114,9 +115,13 @@ export function NewApplicationPage() {
   }
 
   async function handleSubmit(values: Omit<Application, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
-    const app = await create.mutateAsync(values)
-    toast.success(`${values.company_name} added!`)
-    navigate(`/applications/${app.id}`)
+    try {
+      const app = await create.mutateAsync(values)
+      toast.success(`${values.company_name} added!`)
+      navigate(`/applications/${app.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save — check your connection and try again')
+    }
   }
 
   const fieldsFound = scraped

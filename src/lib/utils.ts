@@ -50,13 +50,13 @@ export function needsAttention(app: Application): { flag: boolean; reason: strin
 export function exportToCSV(applications: Application[]): void {
   const headers = [
     'Company', 'Role', 'Type', 'Stage', 'Priority', 'Location', 'Remote',
-    'Source', 'Date Discovered', 'Date Applied', 'Deadline', 'Salary Info',
+    'Source', 'Date Applied', 'Deadline', 'Salary Info',
     'Posting URL', 'Notes', 'Created', 'Updated',
   ]
   const rows = applications.map(a => [
     a.company_name, a.role_title, a.app_type, a.stage, a.priority,
     a.location ?? '', a.remote_type ?? '', a.source ?? '',
-    a.date_discovered ?? '', a.date_applied ?? '', a.deadline ?? '',
+    a.date_applied ?? '', a.deadline ?? '',
     a.salary_info ?? '', a.posting_url ?? '',
     (a.notes ?? '').replace(/\n/g, ' '),
     a.created_at, a.updated_at,

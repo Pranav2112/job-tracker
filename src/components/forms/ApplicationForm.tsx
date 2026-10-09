@@ -23,7 +23,6 @@ const schema = z.object({
   priority: z.enum(['High', 'Medium', 'Low'] as const),
   salary_info: z.string().optional(),
   notes: z.string().optional(),
-  date_discovered: z.string().optional(),
   date_applied: z.string().optional(),
   deadline: z.string().optional(),
 })
@@ -61,7 +60,6 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
       priority: defaultValues?.priority ?? 'Medium',
       salary_info: defaultValues?.salary_info ?? '',
       notes: defaultValues?.notes ?? '',
-      date_discovered: defaultValues?.date_discovered ?? new Date().toISOString().split('T')[0],
       date_applied: defaultValues?.date_applied ?? '',
       deadline: defaultValues?.deadline ?? '',
     },
@@ -81,7 +79,6 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
       priority: values.priority,
       salary_info: values.salary_info || null,
       notes: values.notes || null,
-      date_discovered: values.date_discovered || null,
       date_applied: values.date_applied || null,
       deadline: values.deadline || null,
     })
@@ -250,11 +247,7 @@ export function ApplicationForm({ defaultValues, onSubmit, submitLabel = 'Save',
       {/* ── Dates ── */}
       <div className="space-y-4">
         <SectionLabel>Dates</SectionLabel>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="date_discovered">Discovered</Label>
-            <Input id="date_discovered" type="date" className="h-10" {...register('date_discovered')} />
-          </div>
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="deadline">
               Deadline{' '}

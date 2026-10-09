@@ -55,7 +55,7 @@ export function KanbanColumn({ stage, apps, interviewMap }: KanbanColumnProps) {
           isOver ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/20' : 'bg-muted/20 border-border'
         )}
       >
-        <SortableContext items={apps.map(a => a.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext id={stage} items={apps.map(a => a.id)} strategy={verticalListSortingStrategy}>
           {apps.map(app => (
             <div key={app.id} className="kanban-card">
               <KanbanCard app={app} nextInterview={interviewMap?.get(app.id) ?? null} />

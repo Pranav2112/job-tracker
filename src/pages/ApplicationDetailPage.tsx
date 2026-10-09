@@ -728,7 +728,6 @@ export function ApplicationDetailPage() {
           <InlineEdit label="Source" value={app.source ?? ''} onSave={v => save('source', v)} />
           <UrlField label="Posting URL" value={app.posting_url ?? ''} onSave={v => save('posting_url', v)} />
           <UrlField label="Application link" value={app.application_url ?? ''} onSave={v => save('application_url', v)} />
-          <InlineEdit label="Date discovered" value={app.date_discovered ?? ''} displayValue={app.date_discovered ? formatDate(app.date_discovered) : undefined} type="date" onSave={v => save('date_discovered', v)} />
           <InlineEdit label="Date applied" value={app.date_applied ?? ''} displayValue={app.date_applied ? formatDate(app.date_applied) : undefined} type="date" onSave={v => save('date_applied', v)} />
           <div className="sm:col-span-2">
             <InlineEdit label="Deadline" value={app.deadline ?? ''} displayValue={app.deadline ? formatDate(app.deadline) : undefined} type="date" onSave={v => save('deadline', v)} />
