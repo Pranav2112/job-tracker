@@ -47,7 +47,8 @@ export function useCreateApplication() {
     mutationFn: async (input: Omit<Application, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('applications')
-        .insert({ ...input, user_id: user!.id })
+        // date_discovered removed from UI but column may still exist in DB — satisfy any NOT NULL constraint
+        .insert({ date_discovered: new Date().toISOString().split('T')[0], ...input, user_id: user!.id })
         .select()
         .single()
       if (error) throw error

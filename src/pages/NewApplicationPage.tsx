@@ -120,7 +120,8 @@ export function NewApplicationPage() {
       toast.success(`${values.company_name} added!`)
       navigate(`/applications/${app.id}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save — check your connection and try again')
+      const msg = (err as { message?: string })?.message ?? 'Failed to save — check your connection and try again'
+      toast.error(msg)
     }
   }
 
